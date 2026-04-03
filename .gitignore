@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+
+# Build
+dist
+*.local
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea
+
+# Environment
+.env
+.env.*
+
+# Local tooling
+.claude/
