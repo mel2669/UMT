@@ -161,6 +161,24 @@ function IconCheck() {
   );
 }
 
+/** Calendar glyph aligned with Figma Dialog 2 — Icon/Date-Day */
+function IconDateDay({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width={16}
+      height={16}
+      viewBox="0 0 16 16"
+      aria-hidden
+    >
+      <path
+        fill="currentColor"
+        d="M4.5 1a.75.75 0 0 1 .75.75V2.5h1.5V1.75a.75.75 0 0 1 1.5 0V2.5H9V1.75a.75.75 0 0 1 1.5 0V2.5h.75A1.75 1.75 0 0 1 13 4.25v9.5A1.75 1.75 0 0 1 11.25 15.5h-8.5A1.75 1.75 0 0 1 1 13.75v-9.5C1 3.56 1.56 3 2.25 3H3V1.75A.75.75 0 0 1 4.5 1ZM2.5 6.5v7.25c0 .14.11.25.25.25h8.5a.25.25 0 0 0 .25-.25V6.5h-9Z"
+      />
+    </svg>
+  );
+}
+
 function RadioSelected() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
@@ -200,6 +218,8 @@ export function ExtendRolesDialog() {
     "assignments",
   );
   const [endDateChoice, setEndDateChoice] = useState<"max" | "custom">("max");
+  /** ISO date string (yyyy-mm-dd) for native date input */
+  const [customEndDate, setCustomEndDate] = useState("");
   const [notifyUser, setNotifyUser] = useState(false);
 
   const tableRows = useMemo(
@@ -315,6 +335,29 @@ export function ExtendRolesDialog() {
             <span className={styles.radioText}>Select or enter end date</span>
           </label>
         </div>
+
+        {endDateChoice === "custom" && (
+          <div
+            className={styles.dateField}
+            data-name="Form Field / Datepicker"
+            data-node-id="9:524"
+          >
+            <div className={styles.dateInputRow}>
+              <input
+                id="extend-end-date"
+                type="date"
+                className={`${styles.dateInput} ${
+                  !customEndDate ? styles.dateInputEmpty : ""
+                }`}
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                aria-label="End date"
+              />
+              <IconDateDay className={styles.dateInputIcon} />
+            </div>
+            <p className={styles.dateHint}>MMM DD, YYYY</p>
+          </div>
+        )}
       </div>
 
       <div className={styles.tableScroll}>
