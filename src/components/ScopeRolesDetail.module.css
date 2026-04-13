@@ -1,0 +1,170 @@
+.inlineExpand {
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+.inlinePanel {
+  margin-bottom: 12px;
+  border: 1px solid var(--black-20, #cccccc);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--white, #ffffff);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  /* Allow long role names to wrap; avoid clipping horizontal overflow */
+  overflow-x: visible;
+  overflow-y: visible;
+}
+
+.inlineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--white, #ffffff);
+}
+
+.inlineTitle {
+  font-family: Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--black-60, #666666);
+}
+
+.hideBtn {
+  flex-shrink: 0;
+  font-family: Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 19px;
+  padding: 4px 8px;
+  margin: 0;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--primary, #006d75);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.hideBtn:hover {
+  text-decoration: underline;
+  background: rgba(0, 106, 114, 0.06);
+}
+
+.hideBtn:focus-visible {
+  outline: 2px solid var(--primary-ring, #006a72);
+  outline-offset: 2px;
+}
+
+/* Scroll vertically when many roles; never clip long names horizontally */
+.listWrap {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  max-height: min(44vh, 320px);
+  padding: 0;
+  scrollbar-width: thin;
+}
+
+/* Top bar matches summary card `.cardAccent`: 4px, var(--aqua) */
+.roleList {
+  list-style: none;
+  margin: 0;
+  padding: 20px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border-top: 4px solid var(--aqua, #00a9ce);
+}
+
+.roleLine {
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  min-width: 0;
+  font-family: Chivo, Roboto, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.02em;
+  font-feature-settings: "kern" 1, "liga" 1;
+  color: var(--black, #000);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.empty {
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--black-60, #666666);
+  margin: 0;
+  padding: 20px 20px 22px;
+  border-top: 4px solid var(--aqua, #00a9ce);
+}
+
+.scopeArticle {
+  position: relative;
+}
+
+.scopeHit {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border-radius: inherit;
+}
+
+.scopeHit:focus-visible {
+  outline: 2px solid var(--primary-ring, #006a72);
+  outline-offset: 2px;
+}
+
+.scopeArticle:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.scopeHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--primary, #006d75);
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.scopeHintOpen .chevron {
+  transform: rotate(90deg);
+}
+
+.chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  transition: transform 0.2s ease;
+}

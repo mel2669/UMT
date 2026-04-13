@@ -1,0 +1,235 @@
+.root {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-family: Roboto, system-ui, sans-serif;
+}
+
+.trigger {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 38px;
+  padding: 7.5px 8px;
+  border: 1px solid var(--filter-border-idle, #666666);
+  border-radius: 4px;
+  background: var(--white, #ffffff);
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.triggerOpen {
+  border-color: var(--primary, #006a72);
+}
+
+.chipsColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.placeholder {
+  font-size: 14px;
+  line-height: 19px;
+  color: var(--black-60, #666666);
+  padding: 2px 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  background: var(--primary-light-max, #e5f0f1);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.chipMore {
+  padding: 4px 8px 4px 5px;
+}
+
+.chipRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 23px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-right: 1px solid var(--chip-divider, #b2d2d4);
+  background: transparent;
+  font-size: 14px;
+  line-height: 19px;
+  color: var(--black, #000000);
+  cursor: pointer;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.chipRemove:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.chipLabel {
+  padding: 4px 8px 4px 5px;
+  font-size: 14px;
+  line-height: 19px;
+  color: var(--black, #000000);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.clearAll {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--black-60, #666666);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  align-self: center;
+  outline: none;
+}
+
+.clearAll:hover {
+  color: var(--black, #000000);
+}
+
+.chevronBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--black-60, #666666);
+  cursor: pointer;
+  align-self: center;
+  outline: none;
+}
+
+.chevron {
+  display: block;
+  transition: transform 0.15s ease;
+}
+
+.chevronUp {
+  transform: rotate(180deg);
+}
+
+/* Width is independent of the table column (trigger stays column-sized). */
+.panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  width: max-content;
+  max-width: min(400px, calc(100vw - 32px));
+  max-height: 320px;
+  background: var(--white, #ffffff);
+  border: 1px solid var(--primary, #006a72);
+  border-radius: 4px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.panelBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 240px;
+  overflow: auto;
+  padding: 8px 0;
+}
+
+.panelFooter {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--black-20, #cccccc);
+  background: var(--black-5, #f2f2f2);
+}
+
+.btnApply {
+  font-family: Chivo, Roboto, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  text-transform: uppercase;
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background: var(--primary, #006a72);
+  color: var(--white, #ffffff);
+  outline: none;
+}
+
+.btnApply:hover {
+  filter: brightness(0.95);
+}
+
+.btnReset {
+  font-family: Chivo, Roboto, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  text-transform: uppercase;
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--primary, #006a72);
+  cursor: pointer;
+  background: var(--white, #ffffff);
+  color: var(--primary, #006a72);
+  outline: none;
+}
+
+.btnReset:hover {
+  background: var(--black-5, #f2f2f2);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 19px;
+  color: var(--black, #000000);
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--black-5, #f2f2f2);
+}
+
+.option input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary, #006a72);
+  flex-shrink: 0;
+}

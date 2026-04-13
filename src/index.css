@@ -7,15 +7,10 @@
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
 }
 
 body {
   font-family: Chivo, Roboto, system-ui, sans-serif;
-  background: #e8e8e8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
 }
