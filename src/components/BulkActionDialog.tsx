@@ -16,6 +16,8 @@ export type BulkActionId =
   | "extend-impact"
   | "revoke-impact";
 
+export const MAX_BULK_ACTION_RECORDS = 100;
+
 /** Minimal row shape for the modal (matches SamUserRow fields used here). */
 export type BulkActionUserRow = {
   firstName: string;
@@ -29,7 +31,7 @@ function userKey(r: { firstName: string; lastName: string }) {
   return `${r.firstName}\u0000${r.lastName}`;
 }
 
-function getAllRolesForSelectedUsers(
+export function getAllRolesForSelectedUsers(
   selected: BulkActionUserRow[],
   allRows: BulkActionUserRow[],
 ): BulkActionUserRow[] {
@@ -57,6 +59,9 @@ export type BulkActionDialogProps = {
   selectedRows: BulkActionUserRow[];
   /** Full dataset — used to resolve “all roles for selected users”. */
   allRows: BulkActionUserRow[];
+  /** Maximum allowed number of records in one edit operation. */
+  recordLimit?: number;
+  onRecordLimitExceeded?: (attemptedCount: number) => void;
 };
 
 export function BulkActionDialog({
@@ -66,6 +71,8 @@ export function BulkActionDialog({
   onConfirm,
   selectedRows,
   allRows,
+  recordLimit = MAX_BULK_ACTION_RECORDS,
+  onRecordLimitExceeded,
 }: BulkActionDialogProps) {
   const [notifyUser, setNotifyUser] = useState(false);
   const [scopeChoice, setScopeChoice] = useState<"selected" | "all-users">(
@@ -186,8 +193,20 @@ export function BulkActionDialog({
     : "Revoke roles";
 
   const handlePrimary = () => {
+    if (impactCount > recordLimit) {
+      onRecordLimitExceeded?.(impactCount);
+      return;
+    }
     if (resolvedAction) onConfirm?.(resolvedAction);
     onClose();
+  };
+
+  const handleAllUsersScopeSelection = () => {
+    if (allRolesRows.length > recordLimit) {
+      onRecordLimitExceeded?.(allRolesRows.length);
+      return;
+    }
+    setScopeChoice("all-users");
   };
 
   if (!open || !action) return null;
@@ -323,7 +342,7 @@ export function BulkActionDialog({
                         : ""
                     } ${styles.segmentBtnImpact}`}
                     aria-pressed={scopeChoice === "all-users"}
-                    onClick={() => setScopeChoice("all-users")}
+                    onClick={handleAllUsersScopeSelection}
                   >
                     All roles for selected users ({allRolesRows.length})
                   </button>

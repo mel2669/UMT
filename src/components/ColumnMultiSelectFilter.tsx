@@ -14,6 +14,8 @@ export type ColumnMultiSelectFilterProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   "aria-label": string;
+  /** When true, the control does not open and selection cannot be changed. */
+  disabled?: boolean;
 };
 
 function IconChevron() {
@@ -47,6 +49,7 @@ export function ColumnMultiSelectFilter({
   isOpen,
   onOpenChange,
   "aria-label": ariaLabel,
+  disabled = false,
 }: ColumnMultiSelectFilterProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const wasOpen = useRef(false);
@@ -114,22 +117,27 @@ export function ColumnMultiSelectFilter({
   return (
     <div ref={rootRef} className={styles.root}>
       <div
-        className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""}`}
+        className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""} ${disabled ? styles.triggerDisabled : ""}`}
       >
         <div
           className={styles.chipsColumn}
-          onClick={() => onOpenChange(!isOpen)}
+          onClick={() => {
+            if (disabled) return;
+            onOpenChange(!isOpen);
+          }}
           onKeyDown={(e) => {
+            if (disabled) return;
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               onOpenChange(!isOpen);
             }
           }}
-          tabIndex={0}
+          tabIndex={disabled ? -1 : 0}
           aria-label={ariaLabel}
-          aria-expanded={isOpen}
+          aria-expanded={disabled ? false : isOpen}
           aria-haspopup="listbox"
           aria-controls={listboxId}
+          aria-disabled={disabled || undefined}
         >
           {selected.length === 0 && (
             <span className={styles.placeholder}>Filter</span>
@@ -140,17 +148,19 @@ export function ColumnMultiSelectFilter({
               className={styles.chip}
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
-                className={styles.chipRemove}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeValue(v);
-                }}
-                aria-label={`Remove ${labelByValue[v] ?? v}`}
-              >
-                ×
-              </button>
+              {!disabled && (
+                <button
+                  type="button"
+                  className={styles.chipRemove}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeValue(v);
+                  }}
+                  aria-label={`Remove ${labelByValue[v] ?? v}`}
+                >
+                  ×
+                </button>
+              )}
               <span className={styles.chipLabel}>{labelByValue[v] ?? v}</span>
             </span>
           ))}
@@ -160,7 +170,7 @@ export function ColumnMultiSelectFilter({
             </span>
           )}
         </div>
-        {selected.length > 0 && (
+        {selected.length > 0 && !disabled && (
           <button
             type="button"
             className={styles.clearAll}
@@ -176,8 +186,10 @@ export function ColumnMultiSelectFilter({
         <button
           type="button"
           className={styles.chevronBtn}
+          disabled={disabled}
           onClick={(e) => {
             e.stopPropagation();
+            if (disabled) return;
             onOpenChange(!isOpen);
           }}
           aria-label={isOpen ? "Close filter menu" : "Open filter menu"}
@@ -188,7 +200,7 @@ export function ColumnMultiSelectFilter({
         </button>
       </div>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <div
           id={listboxId}
           className={styles.panel}

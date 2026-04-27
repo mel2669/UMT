@@ -11,7 +11,7 @@
   --white: #ffffff;
   --alert: #f5780a;
   --success: #72c267;
-  --shadow-card: 0 2px 2px rgba(0, 0, 0, 0.15);
+  --shadow-card: 0 2px 2px #00000026;
 
   min-height: 100vh;
   background: var(--black-5);
@@ -19,7 +19,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: Chivo, system-ui, sans-serif;
+  font-family: Roboto, system-ui, sans-serif;
   font-size: 14px;
   line-height: 19px;
 }
@@ -68,17 +68,28 @@
 .primaryNav {
   background: var(--secondary);
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 16px;
   min-height: 72px;
   padding: 0 40px;
   width: 100%;
+  box-sizing: border-box;
+}
+
+.primaryNavBrand {
+  display: flex;
+  align-items: center;
+  gap: 16px 24px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .logoBlock {
   display: flex;
   align-items: center;
   gap: 16px;
-  width: 300px;
+  width: auto;
+  flex-shrink: 0;
   padding: 11px 0;
   color: var(--white);
   font-size: 14px;
@@ -89,8 +100,47 @@
   letter-spacing: 0.02em;
 }
 
+.navScenario {
+  display: flex;
+  align-items: center;
+  gap: 8px 10px;
+  min-width: 0;
+  flex: 1 1 160px;
+}
+
+.navScenarioLabel {
+  font-family: Roboto, sans-serif;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  text-transform: none;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.navScenarioSelect {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: min(440px, 42vw);
+  font-family: Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--black-90);
+  padding: 7px 28px 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
+  background: var(--white);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23666666' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  box-sizing: border-box;
+}
+
 .navItems {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   justify-content: flex-end;
   align-items: stretch;
@@ -100,8 +150,9 @@
   border: none;
   background: var(--secondary);
   color: var(--white);
-  font-family: Chivo, sans-serif;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
+  text-transform: none;
   padding: 0 16px;
   cursor: pointer;
   min-height: 72px;
@@ -140,14 +191,14 @@
 }
 
 .viewModeLabel {
-  font-family: Chivo, sans-serif;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
   color: var(--black-60);
   white-space: nowrap;
 }
 
 .viewModeSelect {
-  font-family: Chivo, sans-serif;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
   line-height: 22px;
   color: var(--black);
@@ -165,8 +216,9 @@
 
 .secondaryLink {
   padding: 14px 16px 15px;
-  font-family: Chivo, sans-serif;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
+  text-transform: uppercase;
   text-decoration: none;
   color: var(--black-60);
   border: none;
@@ -218,9 +270,10 @@
 .tab {
   border: none;
   background: transparent;
-  font-family: Chivo, sans-serif;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
   line-height: 21px;
+  text-transform: uppercase;
   padding: 13.5px 24px;
   cursor: pointer;
   display: flex;
@@ -276,10 +329,17 @@
   justify-content: flex-end;
 }
 
+.toolbarSelectionActions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 .btnSecondary {
-  font-family: Chivo, sans-serif;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
   line-height: 22px;
+  font-weight: 400;
   text-transform: uppercase;
   color: var(--primary);
   border: 1px solid var(--primary);
@@ -289,8 +349,100 @@
   cursor: pointer;
 }
 
-.btnSecondary:hover {
-  background: var(--black-5);
+.btnSecondary:hover:not(:disabled) {
+  background: #e5f0f1;
+  border-color: #0f4448;
+  color: #0f4448;
+}
+
+.btnSecondary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.btnSecondary:disabled {
+  background: var(--white);
+  border-color: var(--primary);
+  color: var(--primary);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+  text-transform: uppercase;
+  color: var(--white);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: #0f4448;
+  border-color: #0f4448;
+}
+
+.btnPrimary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.btnPrimary:disabled {
+  background: var(--white);
+  border-color: var(--primary);
+  color: var(--primary);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.globalFilterActions .btnPrimary:disabled {
+  background: var(--white);
+  border-color: var(--primary);
+  color: var(--primary);
+  opacity: 0.5;
+}
+
+/* Same width and chrome as the users table `.card`; sits below the page title */
+.globalFiltersSection {
+  margin-bottom: 16px;
+}
+
+.globalFilterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px 20px;
+  align-items: end;
+}
+
+.globalFilterField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.globalFilterLabel {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--black-60);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.globalFilterActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: none;
 }
 
 .bulkDropdownWrap {
@@ -311,19 +463,25 @@
   border: 1px solid var(--primary);
   border-radius: 4px;
   background: var(--white);
-  font-family: Chivo, sans-serif;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
-  line-height: 19px;
+  line-height: 22px;
   font-weight: 400;
+  text-transform: uppercase;
   color: var(--primary);
   cursor: pointer;
   box-sizing: border-box;
 }
 
 .bulkDropdownTrigger:hover {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--white);
+  border-color: #0f4448;
+  background: #e5f0f1;
+  color: #0f4448;
+}
+
+.bulkDropdownTrigger:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .bulkDropdownChevron {
@@ -332,7 +490,7 @@
   opacity: 0.85;
 }
 .bulkDropdownTrigger:hover .bulkDropdownChevron {
-  color: var(--white);
+  color: #0f4448;
 }
 
 /* Menu — node 3199:5558 */
@@ -345,7 +503,7 @@
   max-width: min(420px, 92vw);
   background: var(--white);
   border-radius: 4px;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -357,10 +515,11 @@
   text-align: left;
   border: none;
   background: var(--white);
-  font-family: Chivo, sans-serif;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
   line-height: 19px;
   font-weight: 400;
+  text-transform: uppercase;
   color: var(--black);
   padding: 11px 8px 10px;
   cursor: pointer;
@@ -511,8 +670,8 @@
   align-items: center;
   gap: 4px;
   height: 24px;
-  padding: 4px 8px 3px;
-  border-radius: 5px;
+  padding: 4px 10px 3px;
+  border-radius: 999px;
   font-size: 14px;
   white-space: nowrap;
 }
@@ -539,6 +698,37 @@
 .actionsCell {
   width: 66px;
   text-align: center;
+  position: relative;
+  overflow: visible;
+}
+
+.row .td.actionsCell {
+  overflow: visible;
+}
+
+.rowActionMenuWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionsButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.actionsButton:hover {
+  background: var(--black-5);
 }
 
 .actionsGlyph {
@@ -551,6 +741,39 @@
   vertical-align: middle;
   pointer-events: none;
   user-select: none;
+}
+
+.rowActionMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 25;
+  min-width: 140px;
+  background: var(--white);
+  border-radius: 4px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.rowActionOption {
+  display: block;
+  width: 100%;
+  border: none;
+  background: var(--white);
+  text-align: left;
+  padding: 10px 12px;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+  text-transform: uppercase;
+  color: var(--black);
+  cursor: pointer;
+}
+
+.rowActionOption:hover {
+  background: var(--black-5);
 }
 
 .pagination {

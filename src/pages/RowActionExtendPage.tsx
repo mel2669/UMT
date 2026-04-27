@@ -3,12 +3,40 @@ import {
   BulkActionDialog,
   type BulkActionConcreteId,
   type BulkActionId,
+  MAX_BULK_ACTION_RECORDS,
+  getAllRolesForSelectedUsers,
 } from "../components/BulkActionDialog";
 import { ColumnMultiSelectFilter } from "../components/ColumnMultiSelectFilter";
+import { SelectionLimitDialog } from "../components/SelectionLimitDialog";
+import { GrantRolesDialog } from "../components/GrantRolesDialog";
 import { Toast } from "../components/Toast";
+import {
+  type ActiveGlobalFilters,
+  FILTER_SCENARIOS,
+  type FilterScenarioId,
+  clearedDraftForScenario,
+  defaultScenarioState,
+  getScenarioFlags,
+} from "../data/filterScenarios";
+import {
+  APPLICATIONS,
+  DEMO_PROGRAM_TITLE,
+  INSTITUTIONS,
+  programName,
+} from "../data/globalFilterCatalog";
 import styles from "./RowActionExtendPage.module.css";
 
 type TabId = "all" | "expiring" | "expiredRecent";
+
+/** Matches demo tab rules in `buildGeneratedRows` / base rows. */
+function tabMatchForStatus(status: SamUserRow["status"]): TabId[] {
+  const tabMatch: TabId[] = ["all"];
+  if (status === "expired") tabMatch.push("expiredRecent");
+  if (status === "active") tabMatch.push("expiring");
+  return tabMatch;
+}
+
+const BULK_EXTEND_EXPIRATION = "Aug 12, 2026";
 
 export type SamUserRow = {
   id: string;
@@ -18,14 +46,19 @@ export type SamUserRow = {
   role: string;
   status: "expired" | "active" | "revoked";
   program: string;
+  applicationId: string;
+  institutionId: string;
+  /** Empty when `program` is not tied to a catalog program (e.g. "—"). */
+  programId: string;
   expirationDisplay: string;
   /** Demo tab filters — which views include this row */
   tabMatch: TabId[];
 };
 
-const PROGRAM = "0203521053 - University at Buffalo Program - Allergy and Immunology";
+const JHU_IM_PROGRAM = programName("prog-jhu-im");
+const MAYO_DERM_PROGRAM = programName("prog-mayo-derm");
 
-const ALL_ROWS: SamUserRow[] = [
+const BASE_ROWS: SamUserRow[] = [
   {
     id: "1",
     firstName: "Morgan",
@@ -33,7 +66,10 @@ const ALL_ROWS: SamUserRow[] = [
     email: "morgan.lee@jh.edu",
     role: "Program Coordinator",
     status: "expired",
-    program: PROGRAM,
+    program: JHU_IM_PROGRAM,
+    applicationId: "eras",
+    institutionId: "inst-jhu",
+    programId: "prog-jhu-im",
     expirationDisplay: "Aug 22, 2025",
     tabMatch: ["all", "expiredRecent"],
   },
@@ -44,7 +80,10 @@ const ALL_ROWS: SamUserRow[] = [
     email: "morgan.lee@jh.edu",
     role: "Program Super User",
     status: "active",
-    program: PROGRAM,
+    program: JHU_IM_PROGRAM,
+    applicationId: "eras",
+    institutionId: "inst-jhu",
+    programId: "prog-jhu-im",
     expirationDisplay: "Aug 15, 2026",
     tabMatch: ["all", "expiring"],
   },
@@ -55,7 +94,10 @@ const ALL_ROWS: SamUserRow[] = [
     email: "jordan.park@jh.edu",
     role: "Reviewer/interviewer",
     status: "active",
-    program: PROGRAM,
+    program: JHU_IM_PROGRAM,
+    applicationId: "eras",
+    institutionId: "inst-jhu",
+    programId: "prog-jhu-im",
     expirationDisplay: "Aug 17, 2026",
     tabMatch: ["all", "expiring"],
   },
@@ -66,7 +108,10 @@ const ALL_ROWS: SamUserRow[] = [
     email: "jordan.park@jh.edu",
     role: "Institution Super User",
     status: "expired",
-    program: PROGRAM,
+    program: JHU_IM_PROGRAM,
+    applicationId: "eras",
+    institutionId: "inst-jhu",
+    programId: "prog-jhu-im",
     expirationDisplay: "Aug 17, 2025",
     tabMatch: ["all", "expiredRecent"],
   },
@@ -78,6 +123,9 @@ const ALL_ROWS: SamUserRow[] = [
     role: "Institution Super User",
     status: "active",
     program: "-",
+    applicationId: "eras",
+    institutionId: "inst-jhu",
+    programId: "",
     expirationDisplay: "Aug 19, 2026",
     tabMatch: ["all", "expiring"],
   },
@@ -88,7 +136,10 @@ const ALL_ROWS: SamUserRow[] = [
     email: "daniel.connor@jh.edu",
     role: "Alternate Program Super User",
     status: "active",
-    program: PROGRAM,
+    program: DEMO_PROGRAM_TITLE,
+    applicationId: "eras",
+    institutionId: "inst-buffalo",
+    programId: "prog-ub-allergy",
     expirationDisplay: "Sep 10, 2026",
     tabMatch: ["all", "expiring"],
   },
@@ -99,7 +150,10 @@ const ALL_ROWS: SamUserRow[] = [
     email: "elizabeth.wilson@jh.edu",
     role: "Program Coordinator",
     status: "active",
-    program: PROGRAM,
+    program: DEMO_PROGRAM_TITLE,
+    applicationId: "eras",
+    institutionId: "inst-buffalo",
+    programId: "prog-ub-allergy",
     expirationDisplay: "Oct 5, 2026",
     tabMatch: ["all", "expiring"],
   },
@@ -110,7 +164,10 @@ const ALL_ROWS: SamUserRow[] = [
     email: "daniel.chen@jh.edu",
     role: "Alternate Program Super User",
     status: "revoked",
-    program: PROGRAM,
+    program: MAYO_DERM_PROGRAM,
+    applicationId: "gme",
+    institutionId: "inst-mayo",
+    programId: "prog-mayo-derm",
     expirationDisplay: "Nov 12, 2026",
     tabMatch: ["all"],
   },
@@ -122,6 +179,9 @@ const ALL_ROWS: SamUserRow[] = [
     role: "Alternate Institution Super User",
     status: "expired",
     program: "-",
+    applicationId: "eras",
+    institutionId: "inst-jhu",
+    programId: "",
     expirationDisplay: "Jul 1, 2025",
     tabMatch: ["all", "expiredRecent"],
   },
@@ -132,11 +192,162 @@ const ALL_ROWS: SamUserRow[] = [
     email: "elizabeth.zane@jh.edu",
     role: "Program Coordinator",
     status: "active",
-    program: PROGRAM,
+    program: DEMO_PROGRAM_TITLE,
+    applicationId: "eras",
+    institutionId: "inst-buffalo",
+    programId: "prog-ub-allergy",
     expirationDisplay: "Mar 15, 2027",
     tabMatch: ["all"],
   },
 ];
+
+const GENERATED_ROWS_COUNT = 200;
+const GENERATED_FIRST_NAMES = [
+  "Alex",
+  "Taylor",
+  "Jordan",
+  "Casey",
+  "Riley",
+  "Morgan",
+  "Avery",
+  "Parker",
+];
+const GENERATED_LAST_NAMES = [
+  "Adams",
+  "Bennett",
+  "Campbell",
+  "Diaz",
+  "Edwards",
+  "Foster",
+  "Garcia",
+  "Hayes",
+  "Ingram",
+  "Johnson",
+];
+const GENERATED_ROLES = [
+  "Program Coordinator",
+  "Program Super User",
+  "Reviewer/interviewer",
+  "Institution Super User",
+  "Alternate Program Super User",
+  "Alternate Institution Super User",
+];
+const GENERATED_STATUSES: SamUserRow["status"][] = [
+  "active",
+  "expired",
+  "revoked",
+];
+const GENERATED_EXPIRATIONS = [
+  "Jan 15, 2027",
+  "Feb 20, 2027",
+  "Mar 10, 2027",
+  "Apr 25, 2027",
+  "May 18, 2027",
+  "Jun 30, 2027",
+];
+
+const GLOBAL_ROW_PROFILES: Pick<
+  SamUserRow,
+  "applicationId" | "institutionId" | "programId" | "program"
+>[] = [
+  {
+    applicationId: "eras",
+    institutionId: "inst-jhu",
+    programId: "prog-jhu-im",
+    program: JHU_IM_PROGRAM,
+  },
+  {
+    applicationId: "eras",
+    institutionId: "inst-buffalo",
+    programId: "prog-ub-allergy",
+    program: DEMO_PROGRAM_TITLE,
+  },
+  {
+    applicationId: "gme",
+    institutionId: "inst-mayo",
+    programId: "prog-mayo-derm",
+    program: MAYO_DERM_PROGRAM,
+  },
+];
+
+function pruneGlobalFilters(
+  rows: SamUserRow[],
+  next: ActiveGlobalFilters,
+): ActiveGlobalFilters {
+  const appSet = new Set(next.appIds);
+  const instIds = next.instIds.filter((id) =>
+    rows.some(
+      (r) =>
+        r.institutionId === id &&
+        (next.appIds.length === 0 || appSet.has(r.applicationId)),
+    ),
+  );
+  const instSet = new Set(instIds);
+  const progIds = next.progIds.filter((pid) =>
+    rows.some((r) => {
+      if (r.programId !== pid) return false;
+      if (next.appIds.length && !appSet.has(r.applicationId)) return false;
+      if (instIds.length && !instSet.has(r.institutionId)) return false;
+      return true;
+    }),
+  );
+  return { appIds: next.appIds, instIds, progIds };
+}
+
+function buildGeneratedRows(count: number): SamUserRow[] {
+  return Array.from({ length: count }, (_, index) => {
+    const rowNumber = index + 11;
+    const firstName = GENERATED_FIRST_NAMES[index % GENERATED_FIRST_NAMES.length];
+    const lastName =
+      GENERATED_LAST_NAMES[Math.floor(index / 2) % GENERATED_LAST_NAMES.length];
+    const role = GENERATED_ROLES[index % GENERATED_ROLES.length];
+    const status = GENERATED_STATUSES[index % GENERATED_STATUSES.length];
+    const expirationDisplay =
+      GENERATED_EXPIRATIONS[index % GENERATED_EXPIRATIONS.length];
+
+    const tabMatch: TabId[] = ["all"];
+    if (status === "expired") tabMatch.push("expiredRecent");
+    if (status === "active") tabMatch.push("expiring");
+
+    const profile = GLOBAL_ROW_PROFILES[index % GLOBAL_ROW_PROFILES.length];
+    const noProg = index % 5 === 0;
+
+    return {
+      id: String(rowNumber),
+      firstName,
+      lastName,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${rowNumber}@jh.edu`,
+      role,
+      status,
+      program: noProg ? "-" : profile.program,
+      applicationId: profile.applicationId,
+      institutionId: profile.institutionId,
+      programId: noProg ? "" : profile.programId,
+      expirationDisplay,
+      tabMatch,
+    };
+  });
+}
+
+function createInitialRows(): SamUserRow[] {
+  return [...BASE_ROWS, ...buildGeneratedRows(GENERATED_ROWS_COUNT)];
+}
+
+function samePerson(
+  a: Pick<SamUserRow, "firstName" | "lastName">,
+  b: Pick<SamUserRow, "firstName" | "lastName">,
+) {
+  return a.firstName === b.firstName && a.lastName === b.lastName;
+}
+
+function maxNumericRowId(rows: SamUserRow[]): number {
+  let max = 0;
+  for (const r of rows) {
+    const n = Number.parseInt(r.id, 10);
+    if (!Number.isNaN(n) && n > max) max = n;
+  }
+  return max;
+}
 
 const STATUS_SELECT_OPTIONS: { value: SamUserRow["status"]; label: string }[] =
   [
@@ -238,17 +449,10 @@ function IconDropdownChevron({ className }: { className?: string }) {
 /** Figma Menu — node 3199:5558 */
 const BULK_MENU_OPTIONS_SCOPE_FIRST = [
   { id: "extend-selected", label: "Extend selected roles", nodeId: "3199:5559" },
-  { id: "extend-all-users", label: "Extend all roles for selected users", nodeId: "3199:5560" },
   { id: "revoke-selected", label: "Revoke selected roles", nodeId: "3199:5575" },
-  { id: "revoke-all-users", label: "Revoke all roles for selected users", nodeId: "3199:5579" },
 ] as const;
 
-const BULK_MENU_OPTIONS_IMPACT_FIRST = [
-  { id: "extend-impact", label: "Extend roles", nodeId: "impact-extend" },
-  { id: "revoke-impact", label: "Revoke roles", nodeId: "impact-revoke" },
-] as const;
-
-type BulkViewMode = "scope-first" | "impact-first";
+const ROW_ACTION_OPTIONS = ["Grant", "Revoke", "Extend", "Reinstate"] as const;
 
 function IconIssue() {
   return (
@@ -308,7 +512,24 @@ function StatusBadge({ status }: { status: SamUserRow["status"] }) {
   );
 }
 
+const DEFAULT_FILTER_SCENARIO: FilterScenarioId = "multi-app-prog-inst";
+
 export function RowActionExtendPage() {
+  const [rows, setRows] = useState<SamUserRow[]>(() => createInitialRows());
+  const [filterScenario, setFilterScenario] = useState<FilterScenarioId>(
+    DEFAULT_FILTER_SCENARIO,
+  );
+  const [activeGlobalFilters, setActiveGlobalFilters] =
+    useState<ActiveGlobalFilters>(
+      () => defaultScenarioState(DEFAULT_FILTER_SCENARIO).active,
+    );
+  const [draftGlobalFilters, setDraftGlobalFilters] =
+    useState<ActiveGlobalFilters>(
+      () => defaultScenarioState(DEFAULT_FILTER_SCENARIO).draft,
+    );
+  const [requireEmptyProgram, setRequireEmptyProgram] = useState(
+    () => defaultScenarioState(DEFAULT_FILTER_SCENARIO).requireEmptyProgram,
+  );
   const [tab, setTab] = useState<TabId>("all");
   const [qFirst, setQFirst] = useState("");
   const [qLast, setQLast] = useState("");
@@ -319,35 +540,51 @@ export function RowActionExtendPage() {
   const [filterExpirations, setFilterExpirations] = useState<string[]>([]);
   const [showProgramCol, setShowProgramCol] = useState(true);
   const [openFilterDropdown, setOpenFilterDropdown] = useState<
-    null | "role" | "status" | "expiration"
+    null | "role" | "status" | "expiration" | "globalApp" | "globalInst" | "globalProg"
   >(null);
   const filterId = useId();
+  const scenarioSelectId = useId();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkMenuOpen, setBulkMenuOpen] = useState(false);
+  const [rowActionMenuOpenId, setRowActionMenuOpenId] = useState<string | null>(
+    null,
+  );
   const [bulkModalAction, setBulkModalAction] = useState<BulkActionId | null>(
     null,
   );
+  const [selectionLimitAttemptedCount, setSelectionLimitAttemptedCount] =
+    useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [bulkViewMode, setBulkViewMode] = useState<BulkViewMode>("scope-first");
-
-  const bulkMenuOptions =
-    bulkViewMode === "scope-first"
-      ? BULK_MENU_OPTIONS_SCOPE_FIRST
-      : BULK_MENU_OPTIONS_IMPACT_FIRST;
+  const [grantRolesAnchorRow, setGrantRolesAnchorRow] =
+    useState<SamUserRow | null>(null);
+  const bulkMenuOptions = BULK_MENU_OPTIONS_SCOPE_FIRST;
+  const {
+    appReadOnly,
+    instReadOnly,
+    progReadOnly,
+    showProgramFilter: showGlobalProgramFilter,
+    showGlobalFiltersCard,
+    hideApplyRow,
+  } = getScenarioFlags(filterScenario);
 
   const selectedRows = useMemo(
-    () => ALL_ROWS.filter((r) => selected.has(r.id)),
-    [selected],
+    () => rows.filter((r) => selected.has(r.id)),
+    [rows, selected],
   );
+  const selectedCount = selectedRows.length;
 
   useEffect(() => {
-    if (!bulkMenuOpen) return;
+    if (!bulkMenuOpen && !rowActionMenuOpenId) return;
     const close = () => setBulkMenuOpen(false);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
-  }, [bulkMenuOpen]);
+    const closeMenus = () => {
+      close();
+      setRowActionMenuOpenId(null);
+    };
+    window.addEventListener("click", closeMenus);
+    return () => window.removeEventListener("click", closeMenus);
+  }, [bulkMenuOpen, rowActionMenuOpenId]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -355,23 +592,94 @@ export function RowActionExtendPage() {
     return () => window.clearTimeout(id);
   }, [toastMessage]);
 
+  const rowsAfterGlobal = useMemo(() => {
+    return rows.filter((r) => {
+      if (tab !== "all" && !r.tabMatch.includes(tab)) return false;
+      if (
+        activeGlobalFilters.appIds.length &&
+        !activeGlobalFilters.appIds.includes(r.applicationId)
+      )
+        return false;
+      if (
+        activeGlobalFilters.instIds.length &&
+        !activeGlobalFilters.instIds.includes(r.institutionId)
+      )
+        return false;
+      if (
+        activeGlobalFilters.progIds.length &&
+        !activeGlobalFilters.progIds.includes(r.programId)
+      )
+        return false;
+      if (requireEmptyProgram && r.programId) return false;
+      return true;
+    });
+  }, [rows, tab, activeGlobalFilters, requireEmptyProgram]);
+
+  const applicationFilterOptions = useMemo(() => {
+    const seen = new Set(
+      rows.map((r) => r.applicationId).filter((id) => id.length > 0),
+    );
+    return APPLICATIONS.filter((a) => seen.has(a.id)).map((a) => ({
+      value: a.id,
+      label: a.name,
+    }));
+  }, [rows]);
+
+  const institutionFilterOptions = useMemo(() => {
+    const apps = draftGlobalFilters.appIds;
+    const seen = new Set<string>();
+    for (const r of rows) {
+      if (!r.institutionId) continue;
+      if (apps.length && !apps.includes(r.applicationId)) continue;
+      seen.add(r.institutionId);
+    }
+    return INSTITUTIONS.filter((i) => seen.has(i.id)).map((i) => ({
+      value: i.id,
+      label: i.name,
+    }));
+  }, [rows, draftGlobalFilters.appIds]);
+
+  const programFilterOptions = useMemo(() => {
+    const apps = draftGlobalFilters.appIds;
+    const insts = draftGlobalFilters.instIds;
+    const seen = new Set<string>();
+    for (const r of rows) {
+      if (!r.programId) continue;
+      if (apps.length && !apps.includes(r.applicationId)) continue;
+      if (insts.length && !insts.includes(r.institutionId)) continue;
+      seen.add(r.programId);
+    }
+    const opts = [...seen].map((id) => ({
+      value: id,
+      label: programName(id),
+    }));
+    return opts.sort((a, b) => a.label.localeCompare(b.label));
+  }, [rows, draftGlobalFilters.appIds, draftGlobalFilters.instIds]);
+
   const roleFilterOptions = useMemo(() => {
-    const roles = [...new Set(ALL_ROWS.map((r) => r.role))].sort((a, b) =>
+    const roles = [...new Set(rowsAfterGlobal.map((r) => r.role))].sort((a, b) =>
       a.localeCompare(b),
     );
     return roles.map((r) => ({ value: r, label: r }));
-  }, []);
+  }, [rowsAfterGlobal]);
 
   const expirationFilterOptions = useMemo(() => {
-    const dates = [...new Set(ALL_ROWS.map((r) => r.expirationDisplay))].sort(
+    const dates = [...new Set(rowsAfterGlobal.map((r) => r.expirationDisplay))].sort(
       (a, b) => a.localeCompare(b, undefined, { numeric: true }),
     );
     return dates.map((d) => ({ value: d, label: d }));
-  }, []);
+  }, [rowsAfterGlobal]);
+
+  const hasUnappliedGlobal =
+    JSON.stringify(draftGlobalFilters) !== JSON.stringify(activeGlobalFilters);
+
+  useEffect(() => {
+    if (!hideApplyRow) return;
+    setActiveGlobalFilters(draftGlobalFilters);
+  }, [draftGlobalFilters, hideApplyRow]);
 
   const filtered = useMemo(() => {
-    return ALL_ROWS.filter((r) => {
-      if (tab !== "all" && !r.tabMatch.includes(tab)) return false;
+    return rowsAfterGlobal.filter((r) => {
       const f = qFirst.trim().toLowerCase();
       const l = qLast.trim().toLowerCase();
       const e = qEmail.trim().toLowerCase();
@@ -391,7 +699,7 @@ export function RowActionExtendPage() {
       return true;
     });
   }, [
-    tab,
+    rowsAfterGlobal,
     qFirst,
     qLast,
     qEmail,
@@ -400,6 +708,84 @@ export function RowActionExtendPage() {
     filterStatuses,
     filterExpirations,
   ]);
+
+  const pageContext = useMemo(() => {
+    if (filterScenario === "single-inst-single-prog") {
+      return {
+        crumb1: APPLICATIONS.find((a) => a.id === "eras")?.name ?? "ERAS",
+        crumb2:
+          INSTITUTIONS.find((i) => i.id === "inst-buffalo")?.name ?? "Institution",
+        title: DEMO_PROGRAM_TITLE,
+      };
+    }
+    if (filterScenario === "single-inst-no-prog") {
+      const inst = INSTITUTIONS.find((i) => i.id === "inst-jhu");
+      return {
+        crumb1: APPLICATIONS.find((a) => a.id === "eras")?.name ?? "ERAS",
+        crumb2: inst?.name ?? "Institution",
+        title: `${inst?.name ?? "Institution"} — institution roles`,
+      };
+    }
+    const { appIds, instIds, progIds } = activeGlobalFilters;
+    const crumb1 =
+      appIds.length === 1
+        ? (APPLICATIONS.find((a) => a.id === appIds[0])?.name ?? appIds[0])
+        : appIds.length === 0
+          ? "All applications"
+          : "Multiple applications";
+    const crumb2 =
+      instIds.length === 1
+        ? (INSTITUTIONS.find((i) => i.id === instIds[0])?.name ?? instIds[0])
+        : instIds.length === 0
+          ? "All institutions"
+          : "Multiple institutions";
+    let title = "Program users";
+    if (progIds.length === 1) title = programName(progIds[0]);
+    else if (instIds.length === 1)
+      title = INSTITUTIONS.find((i) => i.id === instIds[0])?.name ?? title;
+    else if (appIds.length === 1)
+      title = APPLICATIONS.find((a) => a.id === appIds[0])?.name ?? title;
+    return { crumb1, crumb2, title };
+  }, [filterScenario, activeGlobalFilters]);
+
+  const patchDraft = (patch: Partial<ActiveGlobalFilters>) => {
+    setDraftGlobalFilters((prev) =>
+      pruneGlobalFilters(rows, { ...prev, ...patch }),
+    );
+    setPage(1);
+  };
+
+  const handleScenarioChange = (next: FilterScenarioId) => {
+    setFilterScenario(next);
+    const baseline = defaultScenarioState(next);
+    setActiveGlobalFilters(baseline.active);
+    setDraftGlobalFilters(baseline.draft);
+    setRequireEmptyProgram(baseline.requireEmptyProgram);
+    setFilterRoles([]);
+    setFilterStatuses([]);
+    setFilterExpirations([]);
+    setQFirst("");
+    setQLast("");
+    setQEmail("");
+    setQProgram("");
+    setOpenFilterDropdown(null);
+    setPage(1);
+  };
+
+  const applyGlobalFilters = () => {
+    setActiveGlobalFilters(pruneGlobalFilters(rows, draftGlobalFilters));
+    setOpenFilterDropdown(null);
+    setPage(1);
+  };
+
+  const clearGlobalFilters = () => {
+    const cleared = clearedDraftForScenario(filterScenario);
+    const pruned = pruneGlobalFilters(rows, cleared);
+    setDraftGlobalFilters(pruned);
+    setActiveGlobalFilters(pruned);
+    setOpenFilterDropdown(null);
+    setPage(1);
+  };
 
   const total = filtered.length;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -435,13 +821,132 @@ export function RowActionExtendPage() {
 
   const handleBulkMenuAction = (optionId: BulkActionId) => {
     setBulkMenuOpen(false);
-    const n = selectedRows.length;
-    if (n === 0) {
+    if (selectedCount === 0) {
       window.alert("Select one or more rows first.");
+      return;
+    }
+    if (selectedCount > MAX_BULK_ACTION_RECORDS) {
+      setSelectionLimitAttemptedCount(selectedCount);
+      return;
+    }
+
+    const allApplicableRoleCount = getAllRolesForSelectedUsers(
+      selectedRows,
+      rows,
+    ).length;
+    const checksApplicableRoleLimit =
+      optionId === "extend-all-users" ||
+      optionId === "revoke-all-users";
+    if (
+      checksApplicableRoleLimit &&
+      allApplicableRoleCount > MAX_BULK_ACTION_RECORDS
+    ) {
+      setSelectionLimitAttemptedCount(allApplicableRoleCount);
       return;
     }
 
     setBulkModalAction(optionId);
+  };
+
+  const handleBulkConfirm = (action: BulkActionConcreteId) => {
+    const selectedIds = new Set(selectedRows.map((r) => r.id));
+    const selectedUserKeys = new Set(
+      selectedRows.map((r) => `${r.firstName}\u0000${r.lastName}`),
+    );
+
+    setRows((prev) =>
+      prev.map((r) => {
+        const userKey = `${r.firstName}\u0000${r.lastName}`;
+        if (action === "extend-selected" || action === "revoke-selected") {
+          if (!selectedIds.has(r.id)) return r;
+        } else if (
+          action === "extend-all-users" ||
+          action === "revoke-all-users"
+        ) {
+          if (!selectedUserKeys.has(userKey)) return r;
+        }
+
+        if (action === "extend-selected" || action === "extend-all-users") {
+          return {
+            ...r,
+            status: "active",
+            expirationDisplay: BULK_EXTEND_EXPIRATION,
+            tabMatch: tabMatchForStatus("active"),
+          };
+        }
+        return {
+          ...r,
+          status: "revoked",
+          tabMatch: tabMatchForStatus("revoked"),
+        };
+      }),
+    );
+    setToastMessage(BULK_ACTION_TOAST[action]);
+  };
+
+  const handleGrantRolesConfirm = (roleNames: string[]) => {
+    const anchor = grantRolesAnchorRow;
+    if (!anchor || roleNames.length === 0) return;
+
+    const uniqueRoles = [...new Set(roleNames)];
+
+    setRows((prev) => {
+      const next = [...prev];
+      let idCursor = maxNumericRowId(next);
+
+      for (const role of uniqueRoles) {
+        const activeIdx = next.findIndex(
+          (r) =>
+            samePerson(r, anchor) &&
+            r.role === role &&
+            r.status === "active",
+        );
+        if (activeIdx !== -1) continue;
+
+        const renewIdx = next.findIndex(
+          (r) =>
+            samePerson(r, anchor) &&
+            r.role === role &&
+            (r.status === "expired" || r.status === "revoked"),
+        );
+
+        if (renewIdx !== -1) {
+          const r = next[renewIdx];
+          next[renewIdx] = {
+            ...r,
+            status: "active",
+            expirationDisplay: BULK_EXTEND_EXPIRATION,
+            tabMatch: tabMatchForStatus("active"),
+          };
+          continue;
+        }
+
+        idCursor += 1;
+        next.push({
+          id: String(idCursor),
+          firstName: anchor.firstName,
+          lastName: anchor.lastName,
+          email: anchor.email,
+          role,
+          status: "active",
+          program: anchor.program,
+          applicationId: anchor.applicationId,
+          institutionId: anchor.institutionId,
+          programId: anchor.programId,
+          expirationDisplay: BULK_EXTEND_EXPIRATION,
+          tabMatch: tabMatchForStatus("active"),
+        });
+      }
+
+      return next;
+    });
+
+    const n = uniqueRoles.length;
+    setToastMessage(
+      n === 1
+        ? `Granted role: ${uniqueRoles[0]}.`
+        : `Granted ${n} roles: ${uniqueRoles.join(", ")}.`,
+    );
   };
 
   return (
@@ -458,9 +963,29 @@ export function RowActionExtendPage() {
         </header>
 
         <nav className={styles.primaryNav} aria-label="Primary navigation">
-          <div className={styles.logoBlock}>
-            <span className={styles.logoMark}>AAMC</span>
-            <span>User management tool</span>
+          <div className={styles.primaryNavBrand}>
+            <div className={styles.logoBlock}>
+              <span className={styles.logoMark}>AAMC</span>
+              <span>User management tool</span>
+            </div>
+            <div className={styles.navScenario}>
+              
+              <select
+                id={scenarioSelectId}
+                name="filterScenario"
+                className={styles.navScenarioSelect}
+                value={filterScenario}
+                onChange={(e) =>
+                  handleScenarioChange(e.target.value as FilterScenarioId)
+                }
+              >
+                {FILTER_SCENARIOS.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className={styles.navItems}>
             <button type="button" className={styles.navItem}>
@@ -492,20 +1017,6 @@ export function RowActionExtendPage() {
 
         <div className={styles.secondaryNav}>
           <div className={styles.secondaryInner}>
-            <label className={styles.viewModeField}>
-              <span className={styles.viewModeLabel}>View</span>
-              <select
-                className={styles.viewModeSelect}
-                value={bulkViewMode}
-                onChange={(e) =>
-                  setBulkViewMode(e.target.value as BulkViewMode)
-                }
-                aria-label="Bulk actions view: scope first or impact first"
-              >
-                <option value="scope-first">Scope First</option>
-                <option value="impact-first">Impact First</option>
-              </select>
-            </label>
             <button type="button" className={`${styles.secondaryLink} ${styles.secondaryLinkActive}`}>
               Manage Users
             </button>
@@ -518,11 +1029,87 @@ export function RowActionExtendPage() {
 
       <main className={styles.main}>
         <div className={styles.breadcrumb}>
-          <span>ERAS Program Director Work Station</span>
+          <span>{pageContext.crumb1}</span>
           <span aria-hidden>›</span>
-          <span>Johns Hopkins University School of Medicine</span>
+          <span>{pageContext.crumb2}</span>
         </div>
-        <h1 className={styles.pageTitle}>{PROGRAM}</h1>
+        <h1 className={styles.pageTitle}>{pageContext.title}</h1>
+
+        {showGlobalFiltersCard && (
+          <section
+            className={`${styles.card} ${styles.globalFiltersSection}`}
+            aria-label="Global filters"
+          >
+            <div className={styles.globalFilterGrid}>
+              <div className={styles.globalFilterField}>
+                <span className={styles.globalFilterLabel}>Application</span>
+                <ColumnMultiSelectFilter
+                  id={`${filterId}-global-app`}
+                  options={applicationFilterOptions}
+                  selected={draftGlobalFilters.appIds}
+                  onChange={(next) => patchDraft({ appIds: next })}
+                  isOpen={openFilterDropdown === "globalApp" && !appReadOnly}
+                  onOpenChange={(open) =>
+                    setOpenFilterDropdown(open ? "globalApp" : null)
+                  }
+                  aria-label="Filter by application"
+                  disabled={appReadOnly}
+                />
+              </div>
+              <div className={styles.globalFilterField}>
+                <span className={styles.globalFilterLabel}>Institution</span>
+                <ColumnMultiSelectFilter
+                  id={`${filterId}-global-inst`}
+                  options={institutionFilterOptions}
+                  selected={draftGlobalFilters.instIds}
+                  onChange={(next) => patchDraft({ instIds: next })}
+                  isOpen={openFilterDropdown === "globalInst" && !instReadOnly}
+                  onOpenChange={(open) =>
+                    setOpenFilterDropdown(open ? "globalInst" : null)
+                  }
+                  aria-label="Filter by institution"
+                  disabled={instReadOnly}
+                />
+              </div>
+              {showGlobalProgramFilter && (
+                <div className={styles.globalFilterField}>
+                  <span className={styles.globalFilterLabel}>Program</span>
+                  <ColumnMultiSelectFilter
+                    id={`${filterId}-global-prog`}
+                    options={programFilterOptions}
+                    selected={draftGlobalFilters.progIds}
+                    onChange={(next) => patchDraft({ progIds: next })}
+                    isOpen={openFilterDropdown === "globalProg" && !progReadOnly}
+                    onOpenChange={(open) =>
+                      setOpenFilterDropdown(open ? "globalProg" : null)
+                    }
+                    aria-label="Filter by program"
+                    disabled={progReadOnly}
+                  />
+                </div>
+              )}
+            </div>
+            {!hideApplyRow && (
+              <div className={styles.globalFilterActions}>
+                <button
+                  type="button"
+                  className={styles.btnSecondary}
+                  onClick={clearGlobalFilters}
+                >
+                  Clear filters
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnPrimary}
+                  disabled={!hasUnappliedGlobal}
+                  onClick={applyGlobalFilters}
+                >
+                  Apply filters
+                </button>
+              </div>
+            )}
+          </section>
+        )}
 
         <div className={styles.tabs} role="tablist" aria-label="Role filters">
           <button
@@ -584,7 +1171,20 @@ export function RowActionExtendPage() {
               Show/Hide
             </button>
             <div className={styles.toolbarGrow}>
-              <div className={styles.bulkDropdownWrap}>
+              <div className={styles.toolbarSelectionActions}>
+                {selectedCount > 0 && (
+                  <button
+                    type="button"
+                    className={styles.btnSecondary}
+                    onClick={() => {
+                      setSelected(new Set());
+                      setBulkMenuOpen(false);
+                    }}
+                  >
+                    Deselect All
+                  </button>
+                )}
+                <div className={styles.bulkDropdownWrap}>
                 <button
                   type="button"
                   className={styles.bulkDropdownTrigger}
@@ -595,7 +1195,10 @@ export function RowActionExtendPage() {
                     setBulkMenuOpen((o) => !o);
                   }}
                 >
-                  <span>Bulk Actions</span>
+                  <span>
+                    Bulk Actions
+                    {selectedCount > 0 ? ` (${selectedCount})` : ""}
+                  </span>
                   <IconDropdownChevron className={styles.bulkDropdownChevron} />
                 </button>
                 {bulkMenuOpen && (
@@ -622,6 +1225,7 @@ export function RowActionExtendPage() {
                     ))}
                   </div>
                 )}
+                </div>
               </div>
             </div>
           </div>
@@ -862,9 +1466,50 @@ export function RowActionExtendPage() {
                     )}
                     <td className={styles.td}>{r.expirationDisplay}</td>
                     <td className={`${styles.td} ${styles.actionsCell}`}>
-                      <span className={styles.actionsGlyph} aria-hidden="true">
-                        <IconMore />
-                      </span>
+                      <div className={styles.rowActionMenuWrap}>
+                        <button
+                          type="button"
+                          className={styles.actionsButton}
+                          aria-label={`Actions for ${r.firstName} ${r.lastName}`}
+                          aria-haspopup="menu"
+                          aria-expanded={rowActionMenuOpenId === r.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRowActionMenuOpenId((current) =>
+                              current === r.id ? null : r.id,
+                            );
+                          }}
+                        >
+                          <span className={styles.actionsGlyph} aria-hidden="true">
+                            <IconMore />
+                          </span>
+                        </button>
+                        {rowActionMenuOpenId === r.id && (
+                          <div
+                            className={styles.rowActionMenu}
+                            role="menu"
+                            aria-label="Row actions"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {ROW_ACTION_OPTIONS.map((actionLabel) => (
+                              <button
+                                key={actionLabel}
+                                type="button"
+                                role="menuitem"
+                                className={styles.rowActionOption}
+                                onClick={() => {
+                                  setRowActionMenuOpenId(null);
+                                  if (actionLabel === "Grant") {
+                                    setGrantRolesAnchorRow(r);
+                                  }
+                                }}
+                              >
+                                {actionLabel}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -886,7 +1531,7 @@ export function RowActionExtendPage() {
                 }}
                 aria-label="Items per page"
               >
-                {[10, 25, 50].map((n) => (
+                {[10, 25, 50, 100].map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
@@ -932,11 +1577,29 @@ export function RowActionExtendPage() {
         open={bulkModalAction !== null}
         action={bulkModalAction}
         onClose={() => setBulkModalAction(null)}
-        onConfirm={(action: BulkActionConcreteId) =>
-          setToastMessage(BULK_ACTION_TOAST[action])
-        }
+        onConfirm={handleBulkConfirm}
         selectedRows={selectedRows}
-        allRows={ALL_ROWS}
+        allRows={rows}
+        recordLimit={MAX_BULK_ACTION_RECORDS}
+        onRecordLimitExceeded={(attemptedCount) => {
+          setBulkModalAction(null);
+          setSelectionLimitAttemptedCount(attemptedCount);
+        }}
+      />
+
+      <SelectionLimitDialog
+        open={selectionLimitAttemptedCount !== null}
+        attemptedCount={selectionLimitAttemptedCount}
+        limit={MAX_BULK_ACTION_RECORDS}
+        onClose={() => setSelectionLimitAttemptedCount(null)}
+      />
+
+      <GrantRolesDialog
+        open={grantRolesAnchorRow !== null}
+        anchorRow={grantRolesAnchorRow}
+        allRows={rows}
+        onClose={() => setGrantRolesAnchorRow(null)}
+        onConfirm={handleGrantRolesConfirm}
       />
 
       <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
