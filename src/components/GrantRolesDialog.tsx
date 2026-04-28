@@ -477,7 +477,7 @@ export function GrantRolesDialog({
               <p className={styles.emptyLeft}>No role assignments for this user.</p>
             ) : (
               <div className={styles.currentAccessList}>
-                {assignments.map((a, idx) => (
+                {assignments.map((a) => (
                   <div
                     key={a.id ?? `${a.role}-${a.status}-${a.expirationDisplay}`}
                     className={styles.currentAccessRow}
@@ -507,7 +507,6 @@ export function GrantRolesDialog({
                         Revoked
                       </span>
                     )}
-                    {idx < assignments.length - 1 && <hr className={styles.currentAccessDivider} />}
                   </div>
                 ))}
               </div>
