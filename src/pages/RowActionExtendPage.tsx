@@ -311,7 +311,10 @@ function buildGeneratedRows(count: number): SamUserRow[] {
     if (status === "expired") tabMatch.push("expiredRecent");
     if (status === "active") tabMatch.push("expiring");
 
-    const profile = GLOBAL_ROW_PROFILES[index % GLOBAL_ROW_PROFILES.length];
+    // Decouple app/profile from role index so the same role appears in
+    // multiple applications across the generated dataset.
+    const profile =
+      GLOBAL_ROW_PROFILES[Math.floor(index / 7) % GLOBAL_ROW_PROFILES.length];
     const noProg = index % 5 === 0;
 
     return {
@@ -1671,6 +1674,9 @@ export function RowActionExtendPage() {
         onConfirm={handleBulkConfirm}
         selectedRows={selectedRows}
         allRows={rows}
+        showApplicationColumn={
+          activeGlobalFilters.appIds.length > 1 || draftGlobalFilters.appIds.length > 1
+        }
         recordLimit={MAX_BULK_ACTION_RECORDS}
         onRecordLimitExceeded={(attemptedCount) => {
           setBulkModalAction(null);

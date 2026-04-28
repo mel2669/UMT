@@ -5,7 +5,7 @@ import {
   type ReportDeptRoleLeaf,
   type ReportDeptSubgroup,
   collectRoleIdsFromSubgroup,
-  filterCatalogBySearch,
+  REPORT_DEPARTMENTAL_ROLE_CATALOG,
   getRoleLabelById,
 } from "../data/reportDepartmentalRolesCatalog";
 
@@ -45,17 +45,6 @@ function IconClose() {
       <path
         fill="currentColor"
         d="M5.29 4.29a1 1 0 0 1 1.42 0L10 7.59l3.29-3.3a1 1 0 1 1 1.42 1.42L11.41 9l3.3 3.29a1 1 0 0 1-1.42 1.42L10 10.41l-3.29 3.3a1 1 0 0 1-1.42-1.42L8.59 9l-3.3-3.29a1 1 0 0 1 0-1.42Z"
-      />
-    </svg>
-  );
-}
-
-function IconSearch({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M6.5 1a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm0 1a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm8.2 13.8-4.3-4.3-.7.7 4.3 4.3 1.4-1.4Z"
       />
     </svg>
   );
@@ -277,7 +266,6 @@ export function GrantRolesDialog({
 }: GrantRolesDialogProps) {
   const titleId = useId();
   const selectAllIdPrefix = useId().replace(/:/g, "");
-  const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
 
   const assignments = useMemo(() => {
@@ -286,14 +274,10 @@ export function GrantRolesDialog({
     return allRows.filter((r) => userKey(r) === key);
   }, [anchorRow, allRows]);
 
-  const filteredSections = useMemo(
-    () => filterCatalogBySearch(search),
-    [search],
-  );
+  const filteredSections = useMemo(() => REPORT_DEPARTMENTAL_ROLE_CATALOG, []);
 
   useEffect(() => {
     if (!open) return;
-    setSearch("");
     setPicked(new Set());
   }, [open, anchorRow]);
 
@@ -453,71 +437,7 @@ export function GrantRolesDialog({
             </button>
           </header>
 
-          <div className={styles.searchField}>
-            <label className={styles.searchLabel} htmlFor={`${titleId}-search`}>
-              Search roles
-            </label>
-            <div className={styles.searchWrap}>
-              <IconSearch className={styles.searchIcon} />
-              <input
-                id={`${titleId}-search`}
-                type="search"
-                className={styles.searchInput}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label="Search roles"
-              />
-            </div>
-          </div>
-
-          <section className={styles.currentAccessCard} aria-label="Current access">
-            <div className={styles.cardAccent} />
-            <h2 className={styles.currentAccessHeading}>Current access</h2>
-            {assignments.length === 0 ? (
-              <p className={styles.emptyLeft}>No role assignments for this user.</p>
-            ) : (
-              <div className={styles.currentAccessList}>
-                {assignments.map((a) => (
-                  <div
-                    key={a.id ?? `${a.role}-${a.status}-${a.expirationDisplay}`}
-                    className={styles.currentAccessRow}
-                  >
-                    <div className={styles.currentAccessRole}>
-                      <span
-                        className={`${styles.checkboxControl} ${styles.checkboxControlChecked}`}
-                        aria-hidden
-                      />
-                      <span className={styles.rowLabel}>{a.role}</span>
-                    </div>
-                    {a.status === "expired" && (
-                      <span className={`${styles.badge} ${styles.badgeAlert}`}>
-                        <IconIssue />
-                        Expired
-                      </span>
-                    )}
-                    {a.status === "active" && (
-                      <span className={`${styles.badge} ${styles.badgeOk}`}>
-                        <IconCheck />
-                        Active
-                      </span>
-                    )}
-                    {a.status === "revoked" && (
-                      <span className={`${styles.badge} ${styles.badgeNeutral}`}>
-                        <IconDash />
-                        Revoked
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {filteredSections.length === 0 ? (
-            <p className={styles.emptyLeft}>No roles match your search.</p>
-          ) : (
-            filteredSections.map((section) => renderMajorSection(section))
-          )}
+          {filteredSections.map((section) => renderMajorSection(section))}
         </div>
 
         <footer className={styles.footer}>

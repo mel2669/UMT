@@ -125,3 +125,57 @@
   padding-top: 8px;
   border-top: none;
 }
+
+.expansionPanel {
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  background: #ffffff;
+  margin: 0 0 16px;
+}
+
+.expansionHeader {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  min-height: 48px;
+  padding: 13px 4px;
+  font-family: Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 700;
+  color: #000000;
+  cursor: pointer;
+}
+
+.expansionChevron {
+  color: #666666;
+  flex-shrink: 0;
+}
+
+.expansionBody {
+  border-top: 1px solid #cccccc;
+  padding: 8px 12px 10px;
+}
+
+.rolesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+  color: #000000;
+}
+
+.rolesTable th {
+  text-align: left;
+  font-weight: 700;
+  padding: 6px 0;
+}
+
+.rolesTable td {
+  padding: 6px 0;
+}

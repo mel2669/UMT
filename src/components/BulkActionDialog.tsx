@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dialogStyles from "./ExtendRolesDialog.module.css";
 import styles from "./BulkActionDialog.module.css";
-import { ScopeRolesSummaryCard } from "./ScopeRolesDetail";
+import { APPLICATIONS } from "../data/globalFilterCatalog";
 
 /** Concrete actions (used after confirm / scope-first menu). */
 export type BulkActionConcreteId =
@@ -23,6 +23,7 @@ export type BulkActionUserRow = {
   firstName: string;
   lastName: string;
   role: string;
+  applicationId?: string;
   status: "expired" | "active" | "revoked";
   expirationDisplay: string;
 };
@@ -50,6 +51,35 @@ function IconClose() {
   );
 }
 
+function IconChevron({
+  className,
+  direction,
+}: {
+  className?: string;
+  direction: "up" | "down";
+}) {
+  const path =
+    direction === "up" ? "M4 10l4-4 4 4" : "M4 6l4 4 4-4";
+  return (
+    <svg
+      className={className}
+      width={16}
+      height={16}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d={path}
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export type BulkActionDialogProps = {
   open: boolean;
   action: BulkActionId | null;
@@ -62,6 +92,8 @@ export type BulkActionDialogProps = {
   /** Maximum allowed number of records in one edit operation. */
   recordLimit?: number;
   onRecordLimitExceeded?: (attemptedCount: number) => void;
+  /** Shows Application column in affected-roles panel when true. */
+  showApplicationColumn?: boolean;
 };
 
 export function BulkActionDialog({
@@ -73,12 +105,13 @@ export function BulkActionDialog({
   allRows,
   recordLimit = MAX_BULK_ACTION_RECORDS,
   onRecordLimitExceeded,
+  showApplicationColumn = false,
 }: BulkActionDialogProps) {
   const [notifyUser, setNotifyUser] = useState(false);
   const [scopeChoice, setScopeChoice] = useState<"selected" | "all-users">(
     "selected",
   );
-  const [scopeRolesOpen, setScopeRolesOpen] = useState(false);
+  const [affectedRolesOpen, setAffectedRolesOpen] = useState(false);
 
   const isImpactFlow =
     action === "extend-impact" || action === "revoke-impact";
@@ -108,7 +141,7 @@ export function BulkActionDialog({
   useEffect(() => {
     if (!open || !action) return;
     setNotifyUser(false);
-    setScopeRolesOpen(false);
+    setAffectedRolesOpen(false);
     if (action === "extend-impact" || action === "revoke-impact") {
       setScopeChoice("selected");
     }
@@ -127,15 +160,15 @@ export function BulkActionDialog({
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (scopeRolesOpen) {
-        setScopeRolesOpen(false);
+      if (affectedRolesOpen) {
+        setAffectedRolesOpen(false);
         return;
       }
       onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose, scopeRolesOpen]);
+  }, [open, onClose, affectedRolesOpen]);
 
   const assignmentRows = selectedRows;
   const allRolesRows = useMemo(
@@ -159,10 +192,26 @@ export function BulkActionDialog({
     () => new Set(tableRows.map((r) => r.role)).size,
     [tableRows],
   );
-  const distinctRoleNames = useMemo(
-    () => tableRows.map((r) => r.role),
-    [tableRows],
-  );
+  const affectedRoleRows = useMemo(() => {
+    if (showApplicationColumn) {
+      const unique = new Map<string, { applicationId: string; role: string }>();
+      for (const r of tableRows) {
+        const appId = r.applicationId ?? "";
+        const key = `${appId}\u0000${r.role}`;
+        if (!unique.has(key)) unique.set(key, { applicationId: appId, role: r.role });
+      }
+      return [...unique.values()].sort(
+        (a, b) =>
+          (APPLICATIONS.find((x) => x.id === a.applicationId)?.name ?? a.applicationId).localeCompare(
+            APPLICATIONS.find((x) => x.id === b.applicationId)?.name ?? b.applicationId,
+          ) || a.role.localeCompare(b.role),
+      );
+    }
+    const uniqueRoles = [...new Set(tableRows.map((r) => r.role))].sort((a, b) =>
+      a.localeCompare(b),
+    );
+    return uniqueRoles.map((role) => ({ applicationId: "", role }));
+  }, [showApplicationColumn, tableRows]);
   const impactCount = tableRows.length;
 
   const title = isExtend ? "Extend roles" : "Revoke roles";
@@ -257,17 +306,24 @@ export function BulkActionDialog({
           <p className={dialogStyles.cardSub}>Users total</p>
         </div>
       </article>
-      <ScopeRolesSummaryCard
-        roleNames={distinctRoleNames}
-        open={scopeRolesOpen}
-        onOpenChange={setScopeRolesOpen}
-        articleClassName={`${dialogStyles.summaryCard} ${
+      <article
+        className={`${dialogStyles.summaryCard} ${
           isImpactFlow ? styles.summaryCardImpact : ""
         }`}
-        kickerClassName={isImpactFlow ? styles.cardKickerImpact : ""}
-        distinctCount={distinctRoleCount}
-        idPrefix="bulk-scope-roles"
-      />
+      >
+        <div className={dialogStyles.cardAccent} />
+        <div className={dialogStyles.cardBody}>
+          <p
+            className={`${dialogStyles.cardKicker} ${
+              isImpactFlow ? styles.cardKickerImpact : ""
+            }`}
+          >
+            Scope
+          </p>
+          <p className={dialogStyles.cardNumber}>{distinctRoleCount}</p>
+          <p className={dialogStyles.cardSub}>Distinct roles</p>
+        </div>
+      </article>
     </div>
   );
 
@@ -355,6 +411,45 @@ export function BulkActionDialog({
                   based on your organization&apos;s policies.
                 </p>
               )}
+              <section className={styles.expansionPanel}>
+                <button
+                  type="button"
+                  className={styles.expansionHeader}
+                  aria-expanded={affectedRolesOpen}
+                  onClick={() => setAffectedRolesOpen((v) => !v)}
+                >
+                  <IconChevron
+                    className={styles.expansionChevron}
+                    direction={affectedRolesOpen ? "up" : "down"}
+                  />
+                  <span>View affected roles</span>
+                </button>
+                {affectedRolesOpen && (
+                  <div className={styles.expansionBody}>
+                    <table className={styles.rolesTable}>
+                      <thead>
+                        <tr>
+                          {showApplicationColumn && <th>Application</th>}
+                          <th>Role</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {affectedRoleRows.map((row) => (
+                          <tr key={`${row.applicationId}\u0000${row.role}`}>
+                            {showApplicationColumn && (
+                              <td>
+                                {APPLICATIONS.find((a) => a.id === row.applicationId)?.name ??
+                                  row.applicationId}
+                              </td>
+                            )}
+                            <td>{row.role}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
               {extendDateBlock}
               <label className={styles.notifyInline}>
                 <input
@@ -393,6 +488,45 @@ export function BulkActionDialog({
                 </p>
               )}
               {summaryCards}
+              <section className={styles.expansionPanel}>
+                <button
+                  type="button"
+                  className={styles.expansionHeader}
+                  aria-expanded={affectedRolesOpen}
+                  onClick={() => setAffectedRolesOpen((v) => !v)}
+                >
+                  <IconChevron
+                    className={styles.expansionChevron}
+                    direction={affectedRolesOpen ? "up" : "down"}
+                  />
+                  <span>View affected roles</span>
+                </button>
+                {affectedRolesOpen && (
+                  <div className={styles.expansionBody}>
+                    <table className={styles.rolesTable}>
+                      <thead>
+                        <tr>
+                          {showApplicationColumn && <th>Application</th>}
+                          <th>Role</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {affectedRoleRows.map((row) => (
+                          <tr key={`${row.applicationId}\u0000${row.role}`}>
+                            {showApplicationColumn && (
+                              <td>
+                                {APPLICATIONS.find((a) => a.id === row.applicationId)?.name ??
+                                  row.applicationId}
+                              </td>
+                            )}
+                            <td>{row.role}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
               {extendDateBlock}
             </div>
             <footer className={dialogStyles.footer}>
