@@ -83,17 +83,6 @@ function IconCheck() {
   );
 }
 
-function IconDash() {
-  return (
-    <svg className={styles.badgeIcon} viewBox="0 0 16 16" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm-3 6.25h6v1.5H5v-1.5Z"
-      />
-    </svg>
-  );
-}
-
 function SelectAllRow({
   ids,
   picked,
