@@ -143,7 +143,7 @@ export function ExtendRolesDialog() {
       <div className={styles.extendBlock}>
         <h2 className={styles.extendHeading}>Extend</h2>
         <p className={styles.endDateNotice}>
-          End date will be set to max allowed date ( Aug 12, 2026)
+          End date will be set to Aug 12, 2026
         </p>
       </div>
       </div>
@@ -161,7 +161,7 @@ export function ExtendRolesDialog() {
           Cancel
         </button>
         <button type="button" className={styles.btnPrimary}>
-          Extend roles to Aug 12, 2026
+          Extend roles
         </button>
       </footer>
     </div>

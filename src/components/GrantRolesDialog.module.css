@@ -1,5 +1,3 @@
-/* Grant roles modal — layout aligned to Figma UMT grant dialog */
-
 .backdrop {
   position: fixed;
   inset: 0;
@@ -13,205 +11,339 @@
 }
 
 .shell {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 640px;
+  max-height: min(92vh, 820px);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: min(92vh, 720px);
+}
+
+.mainScroll {
+  flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
-  width: 100%;
-  max-width: 960px;
+  overflow-y: auto;
+  padding: 0 24px 16px;
 }
 
 .header {
-  flex-shrink: 0;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 20px 24px 21px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.headerMain {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
-}
-
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 999px;
-  background: #dbeafe;
-  border: 1px solid #bedbff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 28px;
-  color: #1447e6;
-}
-
-.headerText {
-  min-width: 0;
-}
-
-.title {
-  margin: 0 0 4px;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  line-height: 28px;
-  color: #0f172b;
-}
-
-.metaRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  font-family: Roboto, system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 20px;
-  color: #62748e;
-}
-
-.metaWithIcon {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-}
-
-.metaIcon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  color: #62748e;
-}
-
-.metaDot {
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: #cad5e2;
-  flex-shrink: 0;
-}
-
-.programLine {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-.closeBtn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: #45556c;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.closeBtn:hover {
-  background: rgba(15, 23, 43, 0.06);
-}
-
-.body {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.countBadge {
-  min-width: 24px;
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: #f1f5f9;
-  font-family: Roboto, system-ui, sans-serif;
-  font-size: 12px;
-  line-height: 16px;
-  color: #45556c;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  letter-spacing: 0.35px;
-  text-transform: uppercase;
-}
-
-.accessCard {
-  position: relative;
-  padding: 12px 0 12px 28px;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.accessCard:last-child {
-  border-bottom: none;
-}
-
-.accessIcon {
-  position: absolute;
-  left: 0;
-  top: 16px;
-  width: 16px;
-  height: 16px;
-  color: #62748e;
-}
-
-.accessTop {
+  min-height: 59px;
+  padding: 16px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 4px;
 }
 
-.accessRoleName {
+.title {
   margin: 0;
-  font-family: Roboto, system-ui, sans-serif;
+  font-family: Roboto, sans-serif;
   font-weight: 500;
+  font-size: 22px;
+  line-height: 100%;
+  color: #000000;
+}
+
+.closeBtn {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #666666;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 220px;
+  margin-bottom: 16px;
+}
+
+.searchLabel {
+  font-family: Roboto, sans-serif;
   font-size: 14px;
-  line-height: 20px;
-  color: #101828;
+  line-height: 19px;
+  color: #000000;
+}
+
+.searchWrap {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #666666;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 38px;
+  box-sizing: border-box;
+  border: 1px solid #666666;
+  border-radius: 4px;
+  padding: 8px 8px 8px 30px;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+}
+
+.currentAccessCard {
+  position: relative;
+  border-radius: 4px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+  padding: 16px 24px 20px;
+  margin-bottom: 16px;
+  background: #ffffff;
+}
+
+.cardAccent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  background: #00a9ce;
+}
+
+.currentAccessHeading {
+  margin: 0 0 12px;
+  text-align: left;
+  font-family: Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 22px;
+  color: #000000;
+}
+
+.currentAccessList {
+  display: flex;
+  flex-direction: column;
+}
+
+.currentAccessRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  padding: 4px 0;
+}
+
+.currentAccessRole {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.currentAccessDivider {
+  grid-column: 1 / -1;
+  border: none;
+  border-top: 1px solid #cccccc;
+  margin: 10px 0 8px;
+}
+
+.emptyLeft {
+  margin: 0;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+  color: #666666;
+  padding: 8px 0;
+}
+
+.majorSection {
+  margin-bottom: 14px;
+}
+
+.majorSection:last-child {
+  margin-bottom: 0;
+}
+
+.majorSectionTitle {
+  margin: 0 0 4px;
+  font-family: Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 19px;
+  color: #000000;
+}
+
+.subgroupCount {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 19px;
+  color: #000000;
+}
+
+.subgroup {
+  margin-bottom: 8px;
+}
+
+.subgroupTitle {
+  margin: 0 0 4px;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+  font-weight: 500;
+}
+
+.leafList {
+  display: flex;
+  flex-direction: column;
+}
+
+.selectAllRow,
+.roleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.selectAllRow {
+  padding: 0;
+}
+
+.selectAllLabel,
+.roleLabel {
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+  color: #000000;
+  padding-top: 10px;
+  padding-bottom: 9px;
+}
+
+.roleLabel {
+  flex: 1 1 auto;
+}
+
+.roleLabelMuted {
+  color: #666666;
+}
+
+.leafIndent {
+  padding-left: 40px;
+}
+
+.roleRowSpaced {
+  margin-bottom: 2px;
+}
+
+.checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  border: 0;
+}
+
+.checkboxControl {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  margin: 10px;
+  border: 1px solid #808080;
+  border-radius: 4px;
+  background: #ffffff;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.checkboxControl::before {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 11px;
+  border-right: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  left: 6px;
+  top: 1px;
+  transform: rotate(40deg);
+}
+
+.checkbox:checked + .checkboxControl,
+.checkboxControlChecked {
+  background: #e6e6e6;
+  border-color: #666666;
+}
+
+.checkbox:checked + .checkboxControl::before,
+.checkboxControlChecked::before {
+  border-right-color: #000000;
+  border-bottom-color: #000000;
+}
+
+.checkboxIndeterminate {
+  background: #e6e6e6;
+  border-color: #666666;
+}
+
+.checkboxIndeterminate::before {
+  width: 12px;
+  height: 2px;
+  border: none;
+  background: #000000;
+  left: 3px;
+  top: 8px;
+  transform: none;
+}
+
+.rowAssigned {
+  opacity: 0.85;
+}
+
+.assignedCheck {
+  width: 20px;
+  height: 20px;
+  margin: 10px;
+  border: 1px solid #666666;
+  border-radius: 4px;
+  background: #e6e6e6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 24px;
-  padding: 4px 10px 3px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
+  font-family: Roboto, sans-serif;
   font-size: 14px;
-  white-space: nowrap;
-}
-
-.badgeAlert {
-  background: #f5780a;
+  line-height: 19px;
 }
 
 .badgeOk {
-  background: #72c267;
+  background: #65bd60;
+  color: #000000;
+}
+
+.badgeAlert {
+  background: #c01e31;
+  color: #ffffff;
 }
 
 .badgeNeutral {
@@ -225,549 +357,98 @@
   flex-shrink: 0;
 }
 
-.accessMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-family: Roboto, system-ui, sans-serif;
-  font-size: 12px;
-  line-height: 16px;
-}
-
-.accessCategory {
-  color: #6a7282;
-}
-
-.accessDot {
-  color: #d1d5dc;
-  font-size: 16px;
-  line-height: 24px;
-}
-
-.accessExpiryExpired {
-  font-weight: 500;
-  color: #f54900;
-}
-
-.accessExpiryDefault {
-  color: #6a7282;
-}
-
-.rightCol {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-  min-height: 0;
-}
-
-.rightHeader {
-  flex-shrink: 0;
-  padding: 16px 24px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.rightHeaderRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 16px;
-}
-
-.rightHeading {
-  margin: 0;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  line-height: 1.35;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  color: #1d293d;
-  flex: 1 1 200px;
-  min-width: 0;
-}
-
-.searchWrap {
-  position: relative;
-  flex: 0 1 220px;
-  min-width: 160px;
-  max-width: 280px;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  color: #62748e;
-  pointer-events: none;
-}
-
-.searchInput {
-  width: 100%;
-  box-sizing: border-box;
-  height: 34px;
-  padding: 6px 16px 6px 36px;
-  border: 1px solid #cad5e2;
-  border-radius: 8px;
-  font-family: Roboto, system-ui, sans-serif;
-  font-size: 14px;
-  line-height: normal;
-  color: #0f172b;
-  outline: none;
-}
-
-.searchInput::placeholder {
-  color: rgba(15, 23, 43, 0.5);
-}
-
-.searchInput:focus {
-  border-color: #1447e6;
-  box-shadow: 0 0 0 1px rgba(20, 71, 230, 0.2);
-}
-
-.rightScroll {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 24px;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-}
-
-.currentAccessSection {
-  position: relative;
-  margin-bottom: 24px;
-  padding: 16px 16px 8px;
-  border-radius: 4px;
-  background: #ffffff;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
-}
-
-.currentAccessSection::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-  background: #00a9ce;
-}
-
-.currentAccessHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.currentAccessHeading {
-  margin: 0;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0.35px;
-  text-transform: uppercase;
-  color: #1d293d;
-}
-
-.currentAccessList {
-  display: flex;
-  flex-direction: column;
-}
-
-.availableRolesHeading {
-  margin: 0 0 12px;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 20px;
-  color: #0f172b;
-}
-
-.majorSection {
-  margin-bottom: 28px;
-}
-
-.majorSection:last-child {
-  margin-bottom: 0;
-}
-
-.majorSectionTitle {
-  margin: 0 0 10px;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 20px;
-  color: #0f172b;
-}
-
-.subgroup {
-  margin-bottom: 20px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.subgroup:last-child {
-  margin-bottom: 0;
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.subgroupTitle {
-  margin: 0 0 8px;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  line-height: 18px;
-  color: #314158;
-}
-
-.subgroupCount {
-  font-weight: 500;
-  color: #62748e;
-}
-
-.selectAllRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-  padding: 2px 0;
-}
-
-.selectAllLabel {
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 19px;
-  color: #000000;
-  cursor: pointer;
-  user-select: none;
-}
-
-.leafList {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-bottom: 4px;
-}
-
-.leafIndent {
-  padding-left: 4px;
-}
-
-.roleRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 20px;
-  padding: 4px 0;
-  border-radius: 8px;
-}
-
-.roleRowSpaced {
-  margin-bottom: 8px;
-}
-
-.roleRow:last-child {
-  margin-bottom: 0;
-}
-
-.checkbox {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.checkboxControl {
-  position: relative;
-  width: 20px;
-  height: 20px;
-  border: 1px solid #808080;
-  border-radius: 4px;
-  background: #ffffff;
-  flex-shrink: 0;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-
-.checkboxControl::before {
-  content: "";
-  position: absolute;
-  width: 6px;
-  height: 11px;
-  border-right: 2px solid transparent;
-  border-bottom: 2px solid transparent;
-  left: 6px;
-  top: 2px;
-  transform: rotate(40deg);
-}
-
-.checkbox:checked + .checkboxControl {
-  background: #006a72;
-  border-color: #006a72;
-}
-
-.checkbox:checked + .checkboxControl::before {
-  border-right-color: #ffffff;
-  border-bottom-color: #ffffff;
-}
-
-.checkboxIndeterminate {
-  background: #006a72;
-  border-color: #006a72;
-}
-
-.checkboxIndeterminate::before {
-  width: 12px;
-  height: 2px;
-  border: none;
-  background: #ffffff;
-  left: 3px;
-  top: 8px;
-  transform: none;
-}
-
-.checkbox:focus-visible + .checkboxControl {
-  outline: 2px solid rgba(0, 106, 114, 0.35);
-  outline-offset: 2px;
-}
-
-.checkbox:disabled {
-  cursor: not-allowed;
-}
-
-.checkbox:disabled + .checkboxControl {
-  background: #f2f2f2;
-  border-color: #808080;
-  cursor: not-allowed;
-}
-
-.checkbox:disabled:checked + .checkboxControl {
-  background: #f2f2f2;
-  border-color: #808080;
-}
-
-.checkbox:disabled:checked + .checkboxControl::before {
-  border-right-color: #808080;
-  border-bottom-color: #808080;
-}
-
-.roleLabel {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 19px;
-  color: #000000;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.roleLabelMuted {
-  color: #6a7282;
-}
-
-.rowAssigned {
-  background: #f9fafb;
-  opacity: 0.95;
-  padding: 4px 8px;
-  margin-left: -4px;
-  margin-right: -4px;
-}
-
-.rowAssigned .roleLabel {
-  cursor: default;
-}
-
-.assignedCheck {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1px solid #d1d5dc;
-  background: #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
 .footer {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  padding: 17px 24px 16px;
-  border-top: 1px solid #e2e8f0;
-  background: #fff;
-  box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
+  padding: 16px 24px;
+  box-shadow: 0 -2px 7px rgba(0, 0, 0, 0.15);
+  background: #ffffff;
 }
 
 .summary {
   display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 20px;
+  flex: 1 1 auto;
 }
 
 .summaryBlock {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 2px;
 }
 
 .summaryKicker {
   margin: 0;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 500;
+  font-family: Roboto, sans-serif;
+  font-weight: 400;
   font-size: 12px;
-  line-height: 16px;
+  line-height: 19px;
   text-transform: uppercase;
-  color: #62748e;
+  color: #000000;
 }
 
 .summaryKickerAccent {
-  color: #155dfc;
+  color: #006d75;
 }
 
 .summaryValue {
   margin: 0;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  line-height: 28px;
-  color: #314158;
+  font-family: Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 28px;
+  line-height: 1;
+  color: #000000;
 }
 
 .summaryValueAccent {
-  color: #155dfc;
+  color: #006d75;
 }
 
 .summaryValueTotal {
-  color: #0f172b;
-}
-
-.summarySep {
-  width: 24px;
-  height: 24px;
-  color: #cad5e2;
-  flex-shrink: 0;
+  color: #000000;
 }
 
 .footerActions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 16px;
 }
 
 .btnCancel {
-  height: 40px;
-  padding: 0 20px;
-  border-radius: 4px;
-  border: 1px solid #006a72;
-  background: #ffffff;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 400;
+  border: none;
+  background: transparent;
+  color: #006d75;
+  font-family: Roboto, sans-serif;
+  font-weight: 500;
   font-size: 14px;
   line-height: 22px;
   text-transform: uppercase;
-  color: #006a72;
   cursor: pointer;
-}
-
-.btnCancel:hover:not(:disabled) {
-  background: #e5f0f1;
-  border-color: #0f4448;
-  color: #0f4448;
-}
-
-.btnCancel:focus-visible {
-  outline: 2px solid #006a72;
-  outline-offset: 2px;
-}
-
-.btnCancel:disabled {
-  background: #ffffff;
-  border-color: #006a72;
-  color: #006a72;
-  opacity: 0.5;
-  cursor: not-allowed;
+  padding: 8px 0;
 }
 
 .btnPrimary {
-  height: 40px;
-  min-width: 140px;
-  padding: 0 20px 0 44px;
+  border: 1px solid #006d75;
   border-radius: 4px;
-  border: 1px solid #006a72;
-  position: relative;
-  font-family: Roboto, system-ui, sans-serif;
-  font-weight: 400;
+  background: #ffffff;
+  color: #006d75;
+  font-family: Roboto, sans-serif;
+  font-weight: 500;
   font-size: 14px;
   line-height: 22px;
   text-transform: uppercase;
-  color: #006a72;
-  background: #ffffff;
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btnPrimaryIcon {
-  position: absolute;
-  left: 24px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-}
-
-.btnPrimaryEnabled {
-  color: #fff;
-  border-color: #006a72;
-  background: #006a72;
+  padding: 8px 16px;
   cursor: pointer;
 }
 
-.btnPrimaryEnabled:hover {
-  background: #0f4448;
-  border-color: #0f4448;
+.btnPrimaryEnabled {
+  background: #006d75;
+  color: #ffffff;
 }
 
-.btnPrimaryEnabled:focus-visible {
-  outline: 2px solid #006a72;
-  outline-offset: 2px;
-}
-
-
-.emptyLeft {
-  padding: 16px 0;
-  margin: 0;
-  font-family: Roboto, system-ui, sans-serif;
-  font-size: 14px;
-  color: #62748e;
-}
-
-@media (max-width: 720px) {
-  .searchWrap {
-    max-width: none;
-  }
+.btnPrimaryIcon {
+  display: none;
 }

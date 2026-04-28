@@ -25,21 +25,6 @@ function userKey(r: { firstName: string; lastName: string }) {
   return `${r.firstName}\u0000${r.lastName}`;
 }
 
-function initials(firstName: string, lastName: string) {
-  const a = firstName.trim().charAt(0).toUpperCase();
-  const b = lastName.trim().charAt(0).toUpperCase();
-  return `${a}${b}` || "?";
-}
-
-function accessCategoryLabel(role: string): string {
-  const r = role.toLowerCase();
-  if (r.includes("dashboard")) return "Dashboard";
-  if (r.includes("closed-cycle") || r.includes("report")) return "Reporting";
-  if (r.includes("program")) return "Program";
-  if (r.includes("institution") || r.includes("reviewer")) return "Access";
-  return "Access";
-}
-
 function assignmentForCatalogLabel(
   assignments: GrantRolesRow[],
   label: string,
@@ -65,46 +50,12 @@ function IconClose() {
   );
 }
 
-function IconMail({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 14 14" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M1 2.5h12v9H1v-9Zm1 1 5 3.5L12 3.5v-1L7 6 2 2.5v1Zm-1 8h12v-6l-6 4.2L1 5.5v6Z"
-      />
-    </svg>
-  );
-}
-
-function IconShield({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M8 1 2 3.2v4.3c0 3.1 2.1 6 5 6.7 2.9-.7 5-3.6 5-6.7V3.2L8 1Zm0 12.2C5.7 12.6 4 10.2 4 7.5V4.1l4-1.6 4 1.6v3.4c0 2.7-1.7 5.1-4 5.6Z"
-      />
-    </svg>
-  );
-}
-
 function IconSearch({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 16 16" aria-hidden>
       <path
         fill="currentColor"
         d="M6.5 1a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm0 1a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm8.2 13.8-4.3-4.3-.7.7 4.3 4.3 1.4-1.4Z"
-      />
-    </svg>
-  );
-}
-
-function IconPlusSep({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"
-        opacity="0.4"
       />
     </svg>
   );
@@ -479,11 +430,7 @@ export function GrantRolesDialog({
   };
 
   return (
-    <div
-      className={styles.backdrop}
-      role="presentation"
-      onClick={onClose}
-    >
+    <div className={styles.backdrop} role="presentation" onClick={onClose}>
       <div
         className={styles.shell}
         role="dialog"
@@ -491,131 +438,87 @@ export function GrantRolesDialog({
         aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className={styles.header}>
-          <div className={styles.headerMain}>
-            <div className={styles.avatar} aria-hidden>
-              {initials(anchorRow.firstName, anchorRow.lastName)}
-            </div>
-            <div className={styles.headerText}>
-              <h1 className={styles.title} id={titleId}>
-                Grant Roles to {displayName}
-              </h1>
-              <div className={styles.metaRow}>
-                <span className={styles.metaWithIcon}>
-                  <IconMail className={styles.metaIcon} />
-                  <span>{anchorRow.email}</span>
-                </span>
-                <span className={styles.metaDot} aria-hidden />
-                <span className={styles.programLine} title={anchorRow.program}>
-                  {anchorRow.program}
-                </span>
-              </div>
+        <div className={styles.mainScroll}>
+          <header className={styles.header}>
+            <h1 className={styles.title} id={titleId}>
+              Grant Roles to {displayName}
+            </h1>
+            <button
+              type="button"
+              className={styles.closeBtn}
+              aria-label="Close dialog"
+              onClick={onClose}
+            >
+              <IconClose />
+            </button>
+          </header>
+
+          <div className={styles.searchField}>
+            <label className={styles.searchLabel} htmlFor={`${titleId}-search`}>
+              Search roles
+            </label>
+            <div className={styles.searchWrap}>
+              <IconSearch className={styles.searchIcon} />
+              <input
+                id={`${titleId}-search`}
+                type="search"
+                className={styles.searchInput}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search roles"
+              />
             </div>
           </div>
-          <button
-            type="button"
-            className={styles.closeBtn}
-            aria-label="Close dialog"
-            onClick={onClose}
-          >
-            <IconClose />
-          </button>
-        </header>
 
-        <div className={styles.body}>
-          <section
-            className={styles.rightCol}
-            aria-label="Select report departmental user role"
-          >
-            <div className={styles.rightHeader}>
-              <div className={styles.rightHeaderRow}>
-                <h2 className={styles.rightHeading}>
-                  Select report departmental user role
-                </h2>
-                <div className={styles.searchWrap}>
-                  <IconSearch className={styles.searchIcon} />
-                  <input
-                    type="search"
-                    className={styles.searchInput}
-                    placeholder="Search roles..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    aria-label="Search roles"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className={styles.rightScroll}>
-              <section className={styles.currentAccessSection} aria-label="Current access">
-                <div className={styles.currentAccessHeader}>
-                  <h3 className={styles.currentAccessHeading}>Current access</h3>
-                  <span className={styles.countBadge}>{currentCount}</span>
-                </div>
-                {assignments.length === 0 ? (
-                  <p className={styles.emptyLeft}>No role assignments for this user.</p>
-                ) : (
-                  <div className={styles.currentAccessList}>
-                    {assignments.map((a) => (
-                      <article
-                        key={a.id ?? `${a.role}-${a.status}-${a.expirationDisplay}`}
-                        className={styles.accessCard}
-                      >
-                        <IconShield className={styles.accessIcon} />
-                        <div className={styles.accessTop}>
-                          <p className={styles.accessRoleName}>{a.role}</p>
-                          {a.status === "expired" && (
-                            <span className={`${styles.badge} ${styles.badgeAlert}`}>
-                              <IconIssue />
-                              Expired
-                            </span>
-                          )}
-                          {a.status === "active" && (
-                            <span className={`${styles.badge} ${styles.badgeOk}`}>
-                              <IconCheck />
-                              Active
-                            </span>
-                          )}
-                          {a.status === "revoked" && (
-                            <span className={`${styles.badge} ${styles.badgeNeutral}`}>
-                              <IconDash />
-                              Revoked
-                            </span>
-                          )}
-                        </div>
-                        <div className={styles.accessMeta}>
-                          <span className={styles.accessCategory}>
-                            {accessCategoryLabel(a.role)}
-                          </span>
-                          <span className={styles.accessDot} aria-hidden>
-                            •
-                          </span>
-                          {a.status === "expired" ? (
-                            <span className={styles.accessExpiryExpired}>
-                              Expired {a.expirationDisplay}
-                            </span>
-                          ) : a.status === "active" ? (
-                            <span className={styles.accessExpiryDefault}>
-                              Expires {a.expirationDisplay}
-                            </span>
-                          ) : (
-                            <span className={styles.accessExpiryDefault}>
-                              Revoked · {a.expirationDisplay}
-                            </span>
-                          )}
-                        </div>
-                      </article>
-                    ))}
+          <section className={styles.currentAccessCard} aria-label="Current access">
+            <div className={styles.cardAccent} />
+            <h2 className={styles.currentAccessHeading}>Current access</h2>
+            {assignments.length === 0 ? (
+              <p className={styles.emptyLeft}>No role assignments for this user.</p>
+            ) : (
+              <div className={styles.currentAccessList}>
+                {assignments.map((a, idx) => (
+                  <div
+                    key={a.id ?? `${a.role}-${a.status}-${a.expirationDisplay}`}
+                    className={styles.currentAccessRow}
+                  >
+                    <div className={styles.currentAccessRole}>
+                      <span
+                        className={`${styles.checkboxControl} ${styles.checkboxControlChecked}`}
+                        aria-hidden
+                      />
+                      <span className={styles.rowLabel}>{a.role}</span>
+                    </div>
+                    {a.status === "expired" && (
+                      <span className={`${styles.badge} ${styles.badgeAlert}`}>
+                        <IconIssue />
+                        Expired
+                      </span>
+                    )}
+                    {a.status === "active" && (
+                      <span className={`${styles.badge} ${styles.badgeOk}`}>
+                        <IconCheck />
+                        Active
+                      </span>
+                    )}
+                    {a.status === "revoked" && (
+                      <span className={`${styles.badge} ${styles.badgeNeutral}`}>
+                        <IconDash />
+                        Revoked
+                      </span>
+                    )}
+                    {idx < assignments.length - 1 && <hr className={styles.currentAccessDivider} />}
                   </div>
-                )}
-              </section>
-              <h3 className={styles.availableRolesHeading}>Other roles</h3>
-              {filteredSections.length === 0 ? (
-                <p className={styles.emptyLeft}>No roles match your search.</p>
-              ) : (
-                filteredSections.map((section) => renderMajorSection(section))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
+
+          {filteredSections.length === 0 ? (
+            <p className={styles.emptyLeft}>No roles match your search.</p>
+          ) : (
+            filteredSections.map((section) => renderMajorSection(section))
+          )}
         </div>
 
         <footer className={styles.footer}>
@@ -624,7 +527,6 @@ export function GrantRolesDialog({
               <p className={styles.summaryKicker}>Current</p>
               <p className={styles.summaryValue}>{currentCount}</p>
             </div>
-            <IconPlusSep className={styles.summarySep} />
             <div className={styles.summaryBlock}>
               <p className={`${styles.summaryKicker} ${styles.summaryKickerAccent}`}>
                 Adding
@@ -633,7 +535,6 @@ export function GrantRolesDialog({
                 +{addingCount}
               </p>
             </div>
-            <IconPlusSep className={styles.summarySep} />
             <div className={styles.summaryBlock}>
               <p className={styles.summaryKicker}>Total access</p>
               <p className={`${styles.summaryValue} ${styles.summaryValueTotal}`}>
@@ -642,11 +543,7 @@ export function GrantRolesDialog({
             </div>
           </div>
           <div className={styles.footerActions}>
-            <button
-              type="button"
-              className={styles.btnCancel}
-              onClick={onClose}
-            >
+            <button type="button" className={styles.btnCancel} onClick={onClose}>
               Cancel
             </button>
             <button
@@ -655,11 +552,6 @@ export function GrantRolesDialog({
               disabled={!canSubmit}
               onClick={handleGrant}
             >
-              <span className={styles.btnPrimaryIcon} aria-hidden>
-                <svg width="16" height="16" viewBox="0 0 16 16">
-                  <path fill="currentColor" d="M9 1H7v6H1v2h6v6h2V9h6V7H9V1z" />
-                </svg>
-              </span>
               Grant Roles
             </button>
           </div>

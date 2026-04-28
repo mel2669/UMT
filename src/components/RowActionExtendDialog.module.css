@@ -1,0 +1,232 @@
+.dialog {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+  width: min(633px, 100%);
+  max-height: min(92vh, 520px);
+  padding: 0 24px 24px;
+  color: #000;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 59px;
+  padding: 16px 0;
+}
+
+.title {
+  margin: 0;
+  font-family: Chivo, sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.iconBtn {
+  border: 0;
+  background: transparent;
+  color: #666;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+
+.intro {
+  margin: 0;
+  font-family: Chivo, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radioRow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  cursor: pointer;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.radioVisual {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radioControl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #808080;
+  border-radius: 50%;
+  box-sizing: border-box;
+  transition: border-color 120ms ease;
+}
+
+.radioControlSelected {
+  border-color: #006a72;
+}
+
+.radioDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #006a72;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.radioControlSelected .radioDot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.rowLabel {
+  font-family: Chivo, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+  color: #000;
+}
+
+.notifyRow {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  margin: 10px;
+  accent-color: #006a72;
+}
+
+.customDateField {
+  margin-left: 40px;
+  max-width: 260px;
+}
+
+.dateInputRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 10px 8px 9px;
+  border: 1px solid #666;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.dateInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0 22px 0 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: Chivo, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+}
+
+.dateInputEmpty {
+  color: #666;
+}
+
+.dateInputIcon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  pointer-events: none;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.btnGhost {
+  border: 0;
+  background: transparent;
+  color: #006a72;
+  font-family: Chivo, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  text-transform: uppercase;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  border: 1px solid #006a72;
+  border-radius: 4px;
+  background: #fff;
+  color: #006a72;
+  font-family: Chivo, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

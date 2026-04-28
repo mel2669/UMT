@@ -189,7 +189,7 @@ export function BulkActionDialog({
   }, [resolvedAction, selectedRows, allRolesRows.length]);
 
   const primaryLabel = isExtend
-    ? "Extend roles to Aug 12, 2026"
+    ? "Extend roles"
     : "Revoke roles";
 
   const handlePrimary = () => {
@@ -274,7 +274,7 @@ export function BulkActionDialog({
   const extendDateBlock = isExtend && (
     <div className={dialogStyles.extendBlock}>
       <p className={dialogStyles.endDateNotice}>
-        End date will be set to max allowed date ( Aug 12, 2026)
+        End date will be set to Aug 12, 2026
       </p>
     </div>
   );

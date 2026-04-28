@@ -1,0 +1,101 @@
+.dialog {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+  width: min(633px, 100%);
+  max-height: min(92vh, 420px);
+  padding: 0 24px 24px;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 59px;
+  padding: 16px 0 0;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-family: Chivo, sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.iconBtn {
+  border: 0;
+  background: transparent;
+  color: #666;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.intro {
+  margin: 0;
+  font-family: Chivo, sans-serif;
+  font-size: 14px;
+  line-height: 19px;
+}
+
+.intro strong {
+  font-family: Chivo, sans-serif;
+  font-weight: 700;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 581px;
+  margin-left: auto;
+}
+
+.btnGhost {
+  border: 0;
+  background: transparent;
+  color: #006a72;
+  font-family: Chivo, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  text-transform: uppercase;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.btnDanger {
+  border: 0;
+  border-radius: 4px;
+  background: #d5212b;
+  color: #fff;
+  font-family: Chivo, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.btnDanger:hover {
+  filter: brightness(1.05);
+}

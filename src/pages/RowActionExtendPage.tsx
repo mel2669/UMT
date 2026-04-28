@@ -9,6 +9,8 @@ import {
 import { ColumnMultiSelectFilter } from "../components/ColumnMultiSelectFilter";
 import { SelectionLimitDialog } from "../components/SelectionLimitDialog";
 import { GrantRolesDialog } from "../components/GrantRolesDialog";
+import { RowActionExtendDialog } from "../components/RowActionExtendDialog";
+import { RowActionRevokeDialog } from "../components/RowActionRevokeDialog";
 import { Toast } from "../components/Toast";
 import {
   type ActiveGlobalFilters,
@@ -452,7 +454,8 @@ const BULK_MENU_OPTIONS_SCOPE_FIRST = [
   { id: "revoke-selected", label: "Revoke selected roles", nodeId: "3199:5575" },
 ] as const;
 
-const ROW_ACTION_OPTIONS = ["Grant", "Revoke", "Extend", "Reinstate"] as const;
+const ROW_ACTION_OPTIONS_ACTIVE = ["Grant", "Revoke", "Extend"] as const;
+const ROW_ACTION_OPTIONS_REVOKED = ["Reinstate"] as const;
 
 function IconIssue() {
   return (
@@ -558,6 +561,12 @@ export function RowActionExtendPage() {
     useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [grantRolesAnchorRow, setGrantRolesAnchorRow] =
+    useState<SamUserRow | null>(null);
+  const [extendRoleAnchorRow, setExtendRoleAnchorRow] =
+    useState<SamUserRow | null>(null);
+  const [reinstateRoleAnchorRow, setReinstateRoleAnchorRow] =
+    useState<SamUserRow | null>(null);
+  const [revokeRoleAnchorRow, setRevokeRoleAnchorRow] =
     useState<SamUserRow | null>(null);
   const bulkMenuOptions = BULK_MENU_OPTIONS_SCOPE_FIRST;
   const {
@@ -946,6 +955,76 @@ export function RowActionExtendPage() {
       n === 1
         ? `Granted role: ${uniqueRoles[0]}.`
         : `Granted ${n} roles: ${uniqueRoles.join(", ")}.`,
+    );
+  };
+
+  const handleExtendRoleConfirm = (payload: {
+    endDateDisplay: string;
+    notifyUser: boolean;
+  }) => {
+    const anchor = extendRoleAnchorRow;
+    if (!anchor) return;
+
+    setRows((prev) =>
+      prev.map((r) => {
+        if (r.id !== anchor.id) return r;
+        return {
+          ...r,
+          status: "active",
+          expirationDisplay: payload.endDateDisplay,
+          tabMatch: tabMatchForStatus("active"),
+        };
+      }),
+    );
+
+    const notifySuffix = payload.notifyUser ? " User notified." : "";
+    setToastMessage(
+      `Extended ${anchor.role} for ${anchor.firstName} ${anchor.lastName} to ${payload.endDateDisplay}.${notifySuffix}`,
+    );
+  };
+
+  const handleReinstateRoleConfirm = (payload: {
+    endDateDisplay: string;
+    notifyUser: boolean;
+  }) => {
+    const anchor = reinstateRoleAnchorRow;
+    if (!anchor) return;
+
+    setRows((prev) =>
+      prev.map((r) => {
+        if (r.id !== anchor.id) return r;
+        return {
+          ...r,
+          status: "active",
+          expirationDisplay: payload.endDateDisplay,
+          tabMatch: tabMatchForStatus("active"),
+        };
+      }),
+    );
+
+    const notifySuffix = payload.notifyUser ? " User notified." : "";
+    setToastMessage(
+      `Reinstated ${anchor.role} for ${anchor.firstName} ${anchor.lastName} to ${payload.endDateDisplay}.${notifySuffix}`,
+    );
+  };
+
+  const handleRevokeRoleConfirm = () => {
+    const anchor = revokeRoleAnchorRow;
+    if (!anchor) return;
+
+    setRows((prev) =>
+      prev.map((r) =>
+        r.id !== anchor.id
+          ? r
+          : {
+              ...r,
+              status: "revoked",
+              tabMatch: tabMatchForStatus("revoked"),
+            },
+      ),
+    );
+    setToastMessage(
+      `Revoked ${anchor.role} for ${anchor.firstName} ${anchor.lastName}.`,
     );
   };
 
@@ -1491,7 +1570,10 @@ export function RowActionExtendPage() {
                             aria-label="Row actions"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {ROW_ACTION_OPTIONS.map((actionLabel) => (
+                            {(r.status === "revoked"
+                              ? ROW_ACTION_OPTIONS_REVOKED
+                              : ROW_ACTION_OPTIONS_ACTIVE
+                            ).map((actionLabel) => (
                               <button
                                 key={actionLabel}
                                 type="button"
@@ -1501,6 +1583,15 @@ export function RowActionExtendPage() {
                                   setRowActionMenuOpenId(null);
                                   if (actionLabel === "Grant") {
                                     setGrantRolesAnchorRow(r);
+                                  }
+                                  if (actionLabel === "Extend") {
+                                    setExtendRoleAnchorRow(r);
+                                  }
+                                  if (actionLabel === "Reinstate") {
+                                    setReinstateRoleAnchorRow(r);
+                                  }
+                                  if (actionLabel === "Revoke") {
+                                    setRevokeRoleAnchorRow(r);
                                   }
                                 }}
                               >
@@ -1600,6 +1691,30 @@ export function RowActionExtendPage() {
         allRows={rows}
         onClose={() => setGrantRolesAnchorRow(null)}
         onConfirm={handleGrantRolesConfirm}
+      />
+
+      <RowActionExtendDialog
+        open={extendRoleAnchorRow !== null}
+        row={extendRoleAnchorRow}
+        maxDateDisplay={BULK_EXTEND_EXPIRATION}
+        onClose={() => setExtendRoleAnchorRow(null)}
+        onConfirm={handleExtendRoleConfirm}
+      />
+
+      <RowActionExtendDialog
+        open={reinstateRoleAnchorRow !== null}
+        row={reinstateRoleAnchorRow}
+        maxDateDisplay={BULK_EXTEND_EXPIRATION}
+        mode="reinstate"
+        onClose={() => setReinstateRoleAnchorRow(null)}
+        onConfirm={handleReinstateRoleConfirm}
+      />
+
+      <RowActionRevokeDialog
+        open={revokeRoleAnchorRow !== null}
+        row={revokeRoleAnchorRow}
+        onClose={() => setRevokeRoleAnchorRow(null)}
+        onConfirm={handleRevokeRoleConfirm}
       />
 
       <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
