@@ -83,6 +83,116 @@ function IconCheck() {
   );
 }
 
+function IconInfo() {
+  return (
+    <svg className={styles.infoIconSvg} viewBox="0 0 20 20" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Zm1.2 9.4H8.8v-1.5h.45V9.05H8.8v-1.5h1.95v5.65h.45v1.5Z"
+      />
+    </svg>
+  );
+}
+
+function buildRoleTooltipContent(roleLabel: string) {
+  return {
+    summary: `${roleLabel} provides the holder with scoped access to complete day-to-day workflow tasks and reporting actions.`,
+    capabilities: [
+      `View ${roleLabel} dashboards and workflow queues`,
+      "Open and review records tied to assigned programs",
+      "Create and update role-appropriate report details",
+      "Track status, deadlines, and completion milestones",
+      "Export role-visible data for operational follow-up",
+      "Coordinate with related teams through shared workflow context",
+    ],
+  };
+}
+
+function RoleInfoTooltip({ roleLabel }: { roleLabel: string }) {
+  const { summary, capabilities } = useMemo(
+    () => buildRoleTooltipContent(roleLabel),
+    [roleLabel],
+  );
+  const rootRef = useRef<HTMLSpanElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [placement, setPlacement] = useState<
+    "bottom-start" | "bottom-end" | "top-start" | "top-end"
+  >("bottom-end");
+
+  const updatePlacement = () => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const tooltipWidth = 300;
+    const tooltipHeight = 220;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const placeBelow = spaceBelow >= tooltipHeight || spaceBelow >= spaceAbove;
+
+    const spaceRight = window.innerWidth - rect.left;
+    const spaceLeft = rect.right;
+    const alignStart = spaceRight >= tooltipWidth || spaceRight >= spaceLeft;
+
+    if (placeBelow && alignStart) setPlacement("bottom-start");
+    else if (placeBelow) setPlacement("bottom-end");
+    else if (alignStart) setPlacement("top-start");
+    else setPlacement("top-end");
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    updatePlacement();
+    const handleReposition = () => updatePlacement();
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true);
+    return () => {
+      window.removeEventListener("resize", handleReposition);
+      window.removeEventListener("scroll", handleReposition, true);
+    };
+  }, [open]);
+
+  return (
+    <span
+      ref={rootRef}
+      className={`${styles.roleInfo} ${open ? styles.roleInfoOpen : ""}`}
+      data-placement={placement}
+      onMouseEnter={() => {
+        updatePlacement();
+        setOpen(true);
+      }}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => {
+        updatePlacement();
+        setOpen(true);
+      }}
+      onBlur={(e) => {
+        if (!rootRef.current?.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        ref={triggerRef}
+        type="button"
+        className={styles.infoTrigger}
+        aria-label={`More information about ${roleLabel}`}
+      >
+        <IconInfo />
+      </button>
+      <span className={styles.infoTooltip} role="tooltip">
+        <span className={styles.infoSummary}>{summary}</span>
+        <ul className={styles.infoCapabilityList}>
+          {capabilities.map((capability) => (
+            <li key={capability}>{capability}</li>
+          ))}
+        </ul>
+      </span>
+    </span>
+  );
+}
+
 function SelectAllRow({
   ids,
   picked,
@@ -152,8 +262,11 @@ function RoleLeafRow({
         <span className={styles.assignedCheck} aria-hidden>
           <IconCheckSmall />
         </span>
-        <div className={`${styles.roleLabel} ${styles.roleLabelMuted}`}>
-          {leaf.label}
+        <div className={styles.roleLabelGroup}>
+          <div className={`${styles.roleLabel} ${styles.roleLabelMuted}`}>
+            {leaf.label}
+          </div>
+          <RoleInfoTooltip roleLabel={leaf.label} />
         </div>
         <span className={`${styles.badge} ${styles.badgeOk}`}>
           <IconCheck />
@@ -174,9 +287,12 @@ function RoleLeafRow({
         aria-label={leaf.label}
       />
       <label className={styles.checkboxControl} htmlFor={inputId} aria-hidden />
-      <label className={styles.roleLabel} htmlFor={inputId}>
-        {leaf.label}
-      </label>
+      <div className={styles.roleLabelGroup}>
+        <label className={styles.roleLabel} htmlFor={inputId}>
+          {leaf.label}
+        </label>
+        <RoleInfoTooltip roleLabel={leaf.label} />
+      </div>
       {isExpired && (
         <span className={`${styles.badge} ${styles.badgeAlert}`}>
           <IconIssue />
