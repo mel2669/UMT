@@ -17,35 +17,13 @@ export type ReportDeptSubgroup = {
 export type ReportDeptMajorSection = {
   id: string;
   title: string;
-  /** Basic Sciences: flat list + section-level Select All */
+  /** Flat list + section-level Select All */
   roles?: ReportDeptRoleLeaf[];
   /** Clinical Sciences: grouped specialties */
   subgroups?: ReportDeptSubgroup[];
 };
 
 export const REPORT_DEPARTMENTAL_ROLE_CATALOG: ReportDeptMajorSection[] = [
-  {
-    id: "basic-sciences",
-    title: "Basic Sciences",
-    roles: [
-      { id: "bs-anatomy", label: "Anatomy" },
-      { id: "bs-biochemistry", label: "Biochemistry" },
-      { id: "bs-bioethics", label: "Bioethics/Medical Humanities" },
-      { id: "bs-biomedical-informatics", label: "Biomedical Informatics" },
-      { id: "bs-biostatistics", label: "Biostatistics" },
-      { id: "bs-genetics", label: "Genetics" },
-      { id: "bs-microbiology", label: "Microbiology" },
-      { id: "bs-molecular-cellular", label: "Molecular & Cellular Biology" },
-      { id: "bs-neurosciences", label: "Neurosciences" },
-      { id: "bs-pharmacology", label: "Pharmacology" },
-      { id: "bs-physiology", label: "Physiology" },
-      {
-        id: "bs-population-health",
-        label: "Population Health and Public Health",
-      },
-      { id: "bs-other", label: "Other Basic Sciences" },
-    ],
-  },
   {
     id: "clinical-sciences",
     title: "Clinical Sciences",

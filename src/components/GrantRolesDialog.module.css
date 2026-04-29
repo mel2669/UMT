@@ -38,6 +38,36 @@
   gap: 8px;
 }
 
+.viewSwitcher {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #cccccc;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.viewBtn {
+  border: none;
+  background: #ffffff;
+  color: #006d75;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  line-height: 1;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.viewBtn + .viewBtn {
+  border-left: 1px solid #cccccc;
+}
+
+.viewBtnActive {
+  background: #006d75;
+  color: #ffffff;
+}
+
 .title {
   margin: 0;
   font-family: Roboto, sans-serif;
@@ -135,11 +165,11 @@
 }
 
 .majorSectionTitle {
-  margin: 0 0 4px;
+  margin: 0 0 16px;
   font-family: Roboto, sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 19px;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 22px;
   color: #000000;
 }
 
@@ -151,15 +181,79 @@
 }
 
 .subgroup {
-  margin-bottom: 8px;
+  margin-bottom: 24px;
 }
 
 .subgroupTitle {
   margin: 0 0 4px;
   font-family: Roboto, sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 19px;
   font-weight: 500;
+}
+
+.accordionItem {
+  margin: 0;
+  border: 0;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.accordionItem + .accordionItem {
+  margin-top: 2px;
+  border-top: 1px solid #cccccc;
+}
+
+.accordionSummary {
+  list-style: none;
+  cursor: pointer;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.accordionSummary::-webkit-details-marker {
+  display: none;
+}
+
+.accordionTitle {
+  margin: 0;
+  font-family: Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 21px;
+  color: #000000;
+}
+
+.accordionIndicator {
+  width: 20px;
+  height: 20px;
+  color: #666666;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.accordionItem[open] .accordionIndicator {
+  transform: rotate(180deg);
+}
+
+.accordionContent {
+  padding: 0 16px 12px;
+  border-top: 1px solid #cccccc;
+}
+
+.accordionPanelShell {
+  background: transparent;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.14),
+    0 2px 1px -1px rgba(0, 0, 0, 0.2);
+  padding: 16px;
 }
 
 .leafList {
@@ -230,8 +324,11 @@
   border: 1px solid #808080;
   border-radius: 4px;
   background: #ffffff;
+  color: #ffffff;
   flex-shrink: 0;
   box-sizing: border-box;
+  transition: border-color 0.12s ease, background-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .checkboxControl::before {
@@ -248,29 +345,59 @@
 
 .checkbox:checked + .checkboxControl,
 .checkboxControlChecked {
-  background: #e6e6e6;
-  border-color: #666666;
+  background: #006d75;
+  border-color: #006d75;
 }
 
 .checkbox:checked + .checkboxControl::before,
 .checkboxControlChecked::before {
-  border-right-color: #000000;
-  border-bottom-color: #000000;
+  border-right-color: #ffffff;
+  border-bottom-color: #ffffff;
 }
 
 .checkboxIndeterminate {
+  background: #006d75;
+  border-color: #006d75;
+}
+
+.checkboxIndeterminate::before {
+  width: 14px;
+  height: 2px;
+  border: none;
+  background: #ffffff;
+  left: 3px;
+  top: 8px;
+  transform: none;
+}
+
+.checkbox:focus-visible + .checkboxControl {
+  box-shadow: 0 0 0 2px rgba(0, 109, 117, 0.3);
+}
+
+.roleRow:hover .checkbox:not(:checked) + .checkboxControl,
+.selectAllRow:hover .checkbox:not(:checked) + .checkboxControl {
+  border-color: #666666;
+}
+
+.checkbox:disabled + .checkboxControl {
   background: #e6e6e6;
   border-color: #666666;
 }
 
-.checkboxIndeterminate::before {
-  width: 12px;
-  height: 2px;
-  border: none;
-  background: #000000;
-  left: 3px;
-  top: 8px;
-  transform: none;
+.checkbox:disabled + .checkboxControl::before {
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.checkbox:checked:disabled + .checkboxControl {
+  background: #e6e6e6;
+  border-color: #666666;
+  opacity: 1;
+}
+
+.checkbox:checked:disabled + .checkboxControl::before {
+  border-right-color: #000000;
+  border-bottom-color: #000000;
 }
 
 .rowAssigned {
@@ -281,9 +408,10 @@
   width: 20px;
   height: 20px;
   margin: 10px;
-  border: 1px solid #666666;
+  border: 1px solid #006d75;
   border-radius: 4px;
-  background: #e6e6e6;
+  background: #006d75;
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -364,7 +492,8 @@
   background: #ffffff;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
   padding: 10px 12px;
-  z-index: 4;
+  z-index: 9999;
+  overflow-y: auto;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-2px);

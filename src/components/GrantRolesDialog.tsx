@@ -50,17 +50,6 @@ function IconClose() {
   );
 }
 
-function IconCheckSmall() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M10.2 3 4.5 8.7 1.8 6l-.8.8 3.5 3.5L11 3.8l-.8-.8Z"
-      />
-    </svg>
-  );
-}
-
 function IconIssue() {
   return (
     <svg className={styles.badgeIcon} viewBox="0 0 16 16" aria-hidden>
@@ -94,6 +83,21 @@ function IconInfo() {
   );
 }
 
+function IconChevron() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m3 6 5 5 5-5"
+      />
+    </svg>
+  );
+}
+
 function buildRoleTooltipContent(roleLabel: string) {
   return {
     summary: `${roleLabel} provides the holder with scoped access to complete day-to-day workflow tasks and reporting actions.`,
@@ -119,6 +123,7 @@ function RoleInfoTooltip({ roleLabel }: { roleLabel: string }) {
   const [placement, setPlacement] = useState<
     "bottom-start" | "bottom-end" | "top-start" | "top-end"
   >("bottom-end");
+  const [tooltipMaxHeight, setTooltipMaxHeight] = useState(240);
 
   const updatePlacement = () => {
     const trigger = triggerRef.current;
@@ -129,7 +134,12 @@ function RoleInfoTooltip({ roleLabel }: { roleLabel: string }) {
 
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const placeBelow = spaceBelow >= tooltipHeight || spaceBelow >= spaceAbove;
+    const placeBelow =
+      spaceBelow >= tooltipHeight
+        ? true
+        : spaceAbove >= tooltipHeight
+          ? false
+          : spaceBelow >= spaceAbove;
 
     const spaceRight = window.innerWidth - rect.left;
     const spaceLeft = rect.right;
@@ -139,6 +149,9 @@ function RoleInfoTooltip({ roleLabel }: { roleLabel: string }) {
     else if (placeBelow) setPlacement("bottom-end");
     else if (alignStart) setPlacement("top-start");
     else setPlacement("top-end");
+
+    const availableSpace = placeBelow ? spaceBelow : spaceAbove;
+    setTooltipMaxHeight(Math.max(120, Math.floor(availableSpace - 16)));
   };
 
   useEffect(() => {
@@ -181,7 +194,7 @@ function RoleInfoTooltip({ roleLabel }: { roleLabel: string }) {
       >
         <IconInfo />
       </button>
-      <span className={styles.infoTooltip} role="tooltip">
+      <span className={styles.infoTooltip} style={{ maxHeight: tooltipMaxHeight }} role="tooltip">
         <span className={styles.infoSummary}>{summary}</span>
         <ul className={styles.infoCapabilityList}>
           {capabilities.map((capability) => (
@@ -257,11 +270,22 @@ function RoleLeafRow({
   if (isActive) {
     return (
       <div
-        className={`${styles.roleRow} ${styles.roleRowSpaced} ${styles.rowAssigned}`}
+        className={`${styles.roleRow} ${styles.roleRowSpaced} ${styles.leafIndent} ${styles.rowAssigned}`}
       >
-        <span className={styles.assignedCheck} aria-hidden>
-          <IconCheckSmall />
-        </span>
+        <input
+          id={inputId}
+          type="checkbox"
+          className={styles.checkbox}
+          checked
+          disabled
+          readOnly
+          aria-label={leaf.label}
+        />
+        <label
+          className={`${styles.checkboxControl} ${styles.checkboxControlChecked}`}
+          htmlFor={inputId}
+          aria-hidden
+        />
         <div className={styles.roleLabelGroup}>
           <div className={`${styles.roleLabel} ${styles.roleLabelMuted}`}>
             {leaf.label}
@@ -372,6 +396,7 @@ export function GrantRolesDialog({
   const titleId = useId();
   const selectAllIdPrefix = useId().replace(/:/g, "");
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
+  const [viewMode, setViewMode] = useState<"standard" | "accordion">("standard");
 
   const assignments = useMemo(() => {
     if (!anchorRow) return [];
@@ -384,6 +409,7 @@ export function GrantRolesDialog({
   useEffect(() => {
     if (!open) return;
     setPicked(new Set());
+    setViewMode("standard");
   }, [open, anchorRow]);
 
   useEffect(() => {
@@ -518,6 +544,96 @@ export function GrantRolesDialog({
     return null;
   };
 
+  const renderAccordionSection = (section: ReportDeptMajorSection) => {
+    if (section.roles) {
+      const basicIds = section.roles.map((r) => r.id);
+      const selectedInSection = basicIds.filter((id) => picked.has(id)).length;
+      return (
+        <details key={section.id} className={styles.accordionItem}>
+          <summary className={styles.accordionSummary}>
+            <span className={styles.accordionIndicator} aria-hidden>
+              <IconChevron />
+            </span>
+            <h2 className={styles.accordionTitle}>
+              {section.title}
+              <span className={styles.subgroupCount}>
+                {" "}
+                ({selectedInSection}/{basicIds.length} selected)
+              </span>
+            </h2>
+          </summary>
+          <div className={styles.accordionContent}>
+            <SelectAllRow
+              inputId={`${selectAllIdPrefix}-sa-basic-accordion`}
+              ids={basicIds}
+              picked={picked}
+              onToggleAll={(select) => toggleMany(basicIds, select)}
+            />
+            <div className={styles.leafList}>
+              {section.roles.map((leaf) => (
+                <RoleLeafRow
+                  key={leaf.id}
+                  leaf={leaf}
+                  picked={picked}
+                  assignments={assignments}
+                  onToggle={togglePick}
+                />
+              ))}
+            </div>
+          </div>
+        </details>
+      );
+    }
+
+    if (section.subgroups) {
+      return (
+        <div key={section.id} className={styles.majorSection}>
+          {section.subgroups.map((sg) => {
+            const ids = collectRoleIdsFromSubgroup(sg);
+            const selectedInSg = ids.filter((id) => picked.has(id)).length;
+            return (
+              <details key={sg.id} className={styles.accordionItem}>
+                <summary className={styles.accordionSummary}>
+                  <span className={styles.accordionIndicator} aria-hidden>
+                    <IconChevron />
+                  </span>
+                  <h3 className={styles.accordionTitle}>
+                    {sg.title}
+                    <span className={styles.subgroupCount}>
+                      {" "}
+                      ({selectedInSg}/{ids.length} selected)
+                    </span>
+                  </h3>
+                </summary>
+                <div className={styles.accordionContent}>
+                  <SelectAllRow
+                    inputId={`${selectAllIdPrefix}-sa-${sg.id}-accordion`}
+                    ids={ids}
+                    picked={picked}
+                    onToggleAll={(select) => toggleMany(ids, select)}
+                  />
+                  <div className={styles.leafList}>
+                    {sg.roles.map((leaf) => (
+                      <RoleLeafRow
+                        key={leaf.id}
+                        leaf={leaf}
+                        picked={picked}
+                        assignments={assignments}
+                        onToggle={togglePick}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className={styles.backdrop} role="presentation" onClick={onClose}>
       <div
@@ -532,6 +648,26 @@ export function GrantRolesDialog({
             <h1 className={styles.title} id={titleId}>
               Grant Roles to {displayName}
             </h1>
+            <div className={styles.viewSwitcher} role="group" aria-label="Role view mode">
+              <button
+                type="button"
+                className={`${styles.viewBtn} ${
+                  viewMode === "standard" ? styles.viewBtnActive : ""
+                }`}
+                onClick={() => setViewMode("standard")}
+              >
+                Standard
+              </button>
+              <button
+                type="button"
+                className={`${styles.viewBtn} ${
+                  viewMode === "accordion" ? styles.viewBtnActive : ""
+                }`}
+                onClick={() => setViewMode("accordion")}
+              >
+                Accordion
+              </button>
+            </div>
             <button
               type="button"
               className={styles.closeBtn}
@@ -542,7 +678,13 @@ export function GrantRolesDialog({
             </button>
           </header>
 
-          {filteredSections.map((section) => renderMajorSection(section))}
+          {viewMode === "standard" ? (
+            filteredSections.map((section) => renderMajorSection(section))
+          ) : (
+            <div className={styles.accordionPanelShell}>
+              {filteredSections.map((section) => renderAccordionSection(section))}
+            </div>
+          )}
         </div>
 
         <footer className={styles.footer}>
