@@ -418,11 +418,11 @@ export function BulkActionDialog({
                   aria-expanded={affectedRolesOpen}
                   onClick={() => setAffectedRolesOpen((v) => !v)}
                 >
+                  <span>View affected roles</span>
                   <IconChevron
                     className={styles.expansionChevron}
                     direction={affectedRolesOpen ? "up" : "down"}
                   />
-                  <span>View affected roles</span>
                 </button>
                 {affectedRolesOpen && (
                   <div className={styles.expansionBody}>
@@ -495,11 +495,11 @@ export function BulkActionDialog({
                   aria-expanded={affectedRolesOpen}
                   onClick={() => setAffectedRolesOpen((v) => !v)}
                 >
+                  <span>View affected roles</span>
                   <IconChevron
                     className={styles.expansionChevron}
                     direction={affectedRolesOpen ? "up" : "down"}
                   />
-                  <span>View affected roles</span>
                 </button>
                 {affectedRolesOpen && (
                   <div className={styles.expansionBody}>
