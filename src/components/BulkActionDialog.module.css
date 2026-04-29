@@ -160,9 +160,31 @@
   flex-shrink: 0;
 }
 
+.expansionContent {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms ease;
+}
+
+.expansionContentOpen {
+  grid-template-rows: 1fr;
+}
+
+.expansionContentInner {
+  overflow: hidden;
+}
+
 .expansionBody {
   border-top: 1px solid #cccccc;
   padding: 8px 12px 10px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 160ms ease, transform 220ms ease;
+}
+
+.expansionContentOpen .expansionBody {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .rolesTable {

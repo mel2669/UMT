@@ -424,31 +424,38 @@ export function BulkActionDialog({
                     direction={affectedRolesOpen ? "up" : "down"}
                   />
                 </button>
-                {affectedRolesOpen && (
-                  <div className={styles.expansionBody}>
-                    <table className={styles.rolesTable}>
-                      <thead>
-                        <tr>
-                          {showApplicationColumn && <th>Application</th>}
-                          <th>Role</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {affectedRoleRows.map((row) => (
-                          <tr key={`${row.applicationId}\u0000${row.role}`}>
-                            {showApplicationColumn && (
-                              <td>
-                                {APPLICATIONS.find((a) => a.id === row.applicationId)?.name ??
-                                  row.applicationId}
-                              </td>
-                            )}
-                            <td>{row.role}</td>
+                <div
+                  className={`${styles.expansionContent} ${
+                    affectedRolesOpen ? styles.expansionContentOpen : ""
+                  }`}
+                  aria-hidden={!affectedRolesOpen}
+                >
+                  <div className={styles.expansionContentInner}>
+                    <div className={styles.expansionBody}>
+                      <table className={styles.rolesTable}>
+                        <thead>
+                          <tr>
+                            {showApplicationColumn && <th>Application</th>}
+                            <th>Role</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {affectedRoleRows.map((row) => (
+                            <tr key={`${row.applicationId}\u0000${row.role}`}>
+                              {showApplicationColumn && (
+                                <td>
+                                  {APPLICATIONS.find((a) => a.id === row.applicationId)?.name ??
+                                    row.applicationId}
+                                </td>
+                              )}
+                              <td>{row.role}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                )}
+                </div>
               </section>
               {extendDateBlock}
               <label className={styles.notifyInline}>
@@ -501,31 +508,38 @@ export function BulkActionDialog({
                     direction={affectedRolesOpen ? "up" : "down"}
                   />
                 </button>
-                {affectedRolesOpen && (
-                  <div className={styles.expansionBody}>
-                    <table className={styles.rolesTable}>
-                      <thead>
-                        <tr>
-                          {showApplicationColumn && <th>Application</th>}
-                          <th>Role</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {affectedRoleRows.map((row) => (
-                          <tr key={`${row.applicationId}\u0000${row.role}`}>
-                            {showApplicationColumn && (
-                              <td>
-                                {APPLICATIONS.find((a) => a.id === row.applicationId)?.name ??
-                                  row.applicationId}
-                              </td>
-                            )}
-                            <td>{row.role}</td>
+                <div
+                  className={`${styles.expansionContent} ${
+                    affectedRolesOpen ? styles.expansionContentOpen : ""
+                  }`}
+                  aria-hidden={!affectedRolesOpen}
+                >
+                  <div className={styles.expansionContentInner}>
+                    <div className={styles.expansionBody}>
+                      <table className={styles.rolesTable}>
+                        <thead>
+                          <tr>
+                            {showApplicationColumn && <th>Application</th>}
+                            <th>Role</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {affectedRoleRows.map((row) => (
+                            <tr key={`${row.applicationId}\u0000${row.role}`}>
+                              {showApplicationColumn && (
+                                <td>
+                                  {APPLICATIONS.find((a) => a.id === row.applicationId)?.name ??
+                                    row.applicationId}
+                                </td>
+                              )}
+                              <td>{row.role}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                )}
+                </div>
               </section>
               {extendDateBlock}
             </div>
