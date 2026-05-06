@@ -6,7 +6,6 @@ import {
   type ReportDeptSubgroup,
   collectRoleIdsFromSubgroup,
   REPORT_DEPARTMENTAL_ROLE_CATALOG,
-  getRoleLabelById,
 } from "../data/reportDepartmentalRolesCatalog";
 
 export type GrantRolesRow = {
@@ -72,17 +71,6 @@ function IconCheck() {
   );
 }
 
-function IconInfo() {
-  return (
-    <svg className={styles.infoIconSvg} viewBox="0 0 20 20" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Zm1.2 9.4H8.8v-1.5h.45V9.05H8.8v-1.5h1.95v5.65h.45v1.5Z"
-      />
-    </svg>
-  );
-}
-
 function IconChevron() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
@@ -112,97 +100,42 @@ function buildRoleTooltipContent(roleLabel: string) {
   };
 }
 
-function RoleInfoTooltip({ roleLabel }: { roleLabel: string }) {
+function RoleInfoDetails({ roleLabel }: { roleLabel: string }) {
   const { summary, capabilities } = useMemo(
     () => buildRoleTooltipContent(roleLabel),
     [roleLabel],
   );
-  const rootRef = useRef<HTMLSpanElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [placement, setPlacement] = useState<
-    "bottom-start" | "bottom-end" | "top-start" | "top-end"
-  >("bottom-end");
-  const [tooltipMaxHeight, setTooltipMaxHeight] = useState(240);
-
-  const updatePlacement = () => {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-    const rect = trigger.getBoundingClientRect();
-    const tooltipWidth = 300;
-    const tooltipHeight = 220;
-
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    const placeBelow =
-      spaceBelow >= tooltipHeight
-        ? true
-        : spaceAbove >= tooltipHeight
-          ? false
-          : spaceBelow >= spaceAbove;
-
-    const spaceRight = window.innerWidth - rect.left;
-    const spaceLeft = rect.right;
-    const alignStart = spaceRight >= tooltipWidth || spaceRight >= spaceLeft;
-
-    if (placeBelow && alignStart) setPlacement("bottom-start");
-    else if (placeBelow) setPlacement("bottom-end");
-    else if (alignStart) setPlacement("top-start");
-    else setPlacement("top-end");
-
-    const availableSpace = placeBelow ? spaceBelow : spaceAbove;
-    setTooltipMaxHeight(Math.max(120, Math.floor(availableSpace - 16)));
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    updatePlacement();
-    const handleReposition = () => updatePlacement();
-    window.addEventListener("resize", handleReposition);
-    window.addEventListener("scroll", handleReposition, true);
-    return () => {
-      window.removeEventListener("resize", handleReposition);
-      window.removeEventListener("scroll", handleReposition, true);
-    };
-  }, [open]);
+  const detailsId = useId();
 
   return (
-    <span
-      ref={rootRef}
-      className={`${styles.roleInfo} ${open ? styles.roleInfoOpen : ""}`}
-      data-placement={placement}
-      onMouseEnter={() => {
-        updatePlacement();
-        setOpen(true);
-      }}
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => {
-        updatePlacement();
-        setOpen(true);
-      }}
-      onBlur={(e) => {
-        if (!rootRef.current?.contains(e.relatedTarget as Node | null)) {
-          setOpen(false);
-        }
-      }}
-    >
+    <div className={styles.roleInfoBlock}>
+      <p className={styles.roleSummary}>{summary}</p>
       <button
-        ref={triggerRef}
         type="button"
-        className={styles.infoTrigger}
-        aria-label={`More information about ${roleLabel}`}
+        className={styles.viewMoreButton}
+        aria-expanded={open}
+        aria-controls={detailsId}
+        onClick={() => setOpen((prev) => !prev)}
       >
-        <IconInfo />
+        {open ? "View less" : "View more"}
+        <span
+          className={`${styles.viewMoreChevron} ${
+            open ? styles.viewMoreChevronOpen : ""
+          }`}
+          aria-hidden
+        >
+          <IconChevron />
+        </span>
       </button>
-      <span className={styles.infoTooltip} style={{ maxHeight: tooltipMaxHeight }} role="tooltip">
-        <span className={styles.infoSummary}>{summary}</span>
-        <ul className={styles.infoCapabilityList}>
+      {open && (
+        <ul id={detailsId} className={styles.roleCapabilityList}>
           {capabilities.map((capability) => (
             <li key={capability}>{capability}</li>
           ))}
         </ul>
-      </span>
-    </span>
+      )}
+    </div>
   );
 }
 
@@ -290,11 +223,11 @@ function RoleLeafRow({
           <div className={`${styles.roleLabel} ${styles.roleLabelMuted}`}>
             {leaf.label}
           </div>
-          <RoleInfoTooltip roleLabel={leaf.label} />
+          <RoleInfoDetails roleLabel={leaf.label} />
         </div>
         <span className={`${styles.badge} ${styles.badgeOk}`}>
           <IconCheck />
-          Assigned
+          Active
         </span>
       </div>
     );
@@ -315,7 +248,7 @@ function RoleLeafRow({
         <label className={styles.roleLabel} htmlFor={inputId}>
           {leaf.label}
         </label>
-        <RoleInfoTooltip roleLabel={leaf.label} />
+        <RoleInfoDetails roleLabel={leaf.label} />
       </div>
       {isExpired && (
         <span className={`${styles.badge} ${styles.badgeAlert}`}>
@@ -404,7 +337,39 @@ export function GrantRolesDialog({
     return allRows.filter((r) => userKey(r) === key);
   }, [anchorRow, allRows]);
 
-  const filteredSections = useMemo(() => REPORT_DEPARTMENTAL_ROLE_CATALOG, []);
+  const genericRolesSection = useMemo<ReportDeptMajorSection>(() => {
+    const roleLabels = [...new Set(allRows.map((r) => r.role).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b),
+    );
+    return {
+      id: "generic-roles",
+      title: "Generic roles",
+      roles: roleLabels.map((label, index) => ({
+        id: `generic-role-${index + 1}`,
+        label,
+      })),
+    };
+  }, [allRows]);
+
+  const filteredSections = useMemo(
+    () => [genericRolesSection, ...REPORT_DEPARTMENTAL_ROLE_CATALOG],
+    [genericRolesSection],
+  );
+
+  const roleLabelById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const section of filteredSections) {
+      if (section.roles) {
+        for (const role of section.roles) map.set(role.id, role.label);
+      }
+      if (section.subgroups) {
+        for (const subgroup of section.subgroups) {
+          for (const role of subgroup.roles) map.set(role.id, role.label);
+        }
+      }
+    }
+    return map;
+  }, [filteredSections]);
 
   useEffect(() => {
     if (!open) return;
@@ -433,21 +398,21 @@ export function GrantRolesDialog({
   const addingCount = useMemo(() => {
     let n = 0;
     for (const id of picked) {
-      const label = getRoleLabelById(id);
+      const label = roleLabelById.get(id);
       if (!label) continue;
       const st = assignmentForCatalogLabel(assignments, label)?.status;
       if (st === "active") continue;
       n += 1;
     }
     return n;
-  }, [picked, assignments]);
+  }, [picked, assignments, roleLabelById]);
 
   const currentCount = assignments.length;
   const totalAccess = currentCount + addingCount;
   const canSubmit = addingCount > 0;
 
   const togglePick = (id: string) => {
-    const label = getRoleLabelById(id);
+    const label = roleLabelById.get(id);
     if (!label) return;
     if (assignmentForCatalogLabel(assignments, label)?.status === "active") {
       return;
@@ -464,7 +429,7 @@ export function GrantRolesDialog({
     setPicked((prev) => {
       const next = new Set(prev);
       for (const id of ids) {
-        const label = getRoleLabelById(id);
+        const label = roleLabelById.get(id);
         if (!label) continue;
         if (assignmentForCatalogLabel(assignments, label)?.status === "active")
           continue;
@@ -478,7 +443,7 @@ export function GrantRolesDialog({
   const handleGrant = () => {
     if (!canSubmit) return;
     const names = [...picked]
-      .map((id) => getRoleLabelById(id))
+      .map((id) => roleLabelById.get(id))
       .filter(Boolean) as string[];
     onConfirm?.(names);
     onClose();
@@ -677,7 +642,6 @@ export function GrantRolesDialog({
               <IconClose />
             </button>
           </header>
-
           {viewMode === "standard" ? (
             filteredSections.map((section) => renderMajorSection(section))
           ) : (

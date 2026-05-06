@@ -453,8 +453,8 @@ function IconDropdownChevron({ className }: { className?: string }) {
 
 /** Figma Menu — node 3199:5558 */
 const BULK_MENU_OPTIONS_SCOPE_FIRST = [
-  { id: "extend-selected", label: "Extend selected roles", nodeId: "3199:5559" },
-  { id: "revoke-selected", label: "Revoke selected roles", nodeId: "3199:5575" },
+  { id: "extend-selected", label: "Extend", nodeId: "3199:5559" },
+  { id: "revoke-selected", label: "Revoke", nodeId: "3199:5575" },
 ] as const;
 
 const ROW_ACTION_OPTIONS_ACTIVE = ["Grant", "Revoke", "Extend"] as const;
@@ -626,6 +626,11 @@ export function RowActionExtendPage() {
       return true;
     });
   }, [rows, tab, activeGlobalFilters, requireEmptyProgram]);
+
+  const selectedRowsAfterGlobal = useMemo(
+    () => rowsAfterGlobal.filter((r) => selected.has(r.id)),
+    [rowsAfterGlobal, selected],
+  );
 
   const applicationFilterOptions = useMemo(() => {
     const seen = new Set(
@@ -879,6 +884,7 @@ export function RowActionExtendPage() {
         }
 
         if (action === "extend-selected" || action === "extend-all-users") {
+          if (r.status !== "active") return r;
           return {
             ...r,
             status: "active",
@@ -1672,8 +1678,8 @@ export function RowActionExtendPage() {
         action={bulkModalAction}
         onClose={() => setBulkModalAction(null)}
         onConfirm={handleBulkConfirm}
-        selectedRows={selectedRows}
-        allRows={rows}
+        selectedRows={selectedRowsAfterGlobal}
+        allRows={rowsAfterGlobal}
         showApplicationColumn={
           activeGlobalFilters.appIds.length > 1 || draftGlobalFilters.appIds.length > 1
         }

@@ -291,9 +291,10 @@
 }
 
 .roleLabelGroup {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
   flex: 1 1 auto;
 }
 
@@ -450,106 +451,49 @@
   flex-shrink: 0;
 }
 
-.roleInfo {
-  position: relative;
-  display: inline-flex;
-  align-self: center;
-  margin-top: 0;
+.roleInfoBlock {
+  width: 100%;
+  margin: -2px 0 6px;
 }
 
-.infoTrigger {
-  width: 18px;
-  height: 18px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: #666666;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  cursor: help;
-}
-
-.infoTrigger:hover,
-.infoTrigger:focus-visible {
-  color: #006d75;
-  outline: none;
-}
-
-.infoIconSvg {
-  width: 16px;
-  height: 16px;
-}
-
-.infoTooltip {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: 300px;
-  border-radius: 8px;
-  border: 1px solid #d8d8d8;
-  background: #ffffff;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-  padding: 10px 12px;
-  z-index: 9999;
-  overflow-y: auto;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-2px);
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
-  transform-origin: top right;
-}
-
-.roleInfoOpen .infoTooltip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.roleInfo[data-placement="bottom-start"] .infoTooltip {
-  left: 0;
-  right: auto;
-  top: calc(100% + 8px);
-  bottom: auto;
-  transform-origin: top left;
-}
-
-.roleInfo[data-placement="bottom-end"] .infoTooltip {
-  left: auto;
-  right: 0;
-  top: calc(100% + 8px);
-  bottom: auto;
-  transform-origin: top right;
-}
-
-.roleInfo[data-placement="top-start"] .infoTooltip {
-  left: 0;
-  right: auto;
-  top: auto;
-  bottom: calc(100% + 8px);
-  transform-origin: bottom left;
-}
-
-.roleInfo[data-placement="top-end"] .infoTooltip {
-  left: auto;
-  right: 0;
-  top: auto;
-  bottom: calc(100% + 8px);
-  transform-origin: bottom right;
-}
-
-.infoSummary {
-  display: block;
+.roleSummary {
+  margin: 0 0 2px;
   font-family: Roboto, sans-serif;
   font-size: 12px;
   line-height: 16px;
-  color: #1f1f1f;
-  margin-bottom: 8px;
+  color: #4d4d4d;
 }
 
-.infoCapabilityList {
-  margin: 0;
+.viewMoreButton {
+  border: none;
+  background: transparent;
+  color: #006d75;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+
+.viewMoreChevron {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease;
+}
+
+.viewMoreChevronOpen {
+  transform: rotate(180deg);
+}
+
+.roleCapabilityList {
+  margin: 4px 0 0;
   padding-left: 18px;
   font-family: Roboto, sans-serif;
   font-size: 12px;
@@ -557,7 +501,7 @@
   color: #1f1f1f;
 }
 
-.infoCapabilityList li + li {
+.roleCapabilityList li + li {
   margin-top: 2px;
 }
 

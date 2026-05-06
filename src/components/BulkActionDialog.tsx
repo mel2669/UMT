@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dialogStyles from "./ExtendRolesDialog.module.css";
 import styles from "./BulkActionDialog.module.css";
-import { APPLICATIONS } from "../data/globalFilterCatalog";
+import { APPLICATIONS, INSTITUTIONS } from "../data/globalFilterCatalog";
 
 /** Concrete actions (used after confirm / scope-first menu). */
 export type BulkActionConcreteId =
@@ -24,6 +24,7 @@ export type BulkActionUserRow = {
   lastName: string;
   role: string;
   applicationId?: string;
+  institutionId?: string;
   status: "expired" | "active" | "revoked";
   expirationDisplay: string;
 };
@@ -105,7 +106,6 @@ export function BulkActionDialog({
   allRows,
   recordLimit = MAX_BULK_ACTION_RECORDS,
   onRecordLimitExceeded,
-  showApplicationColumn = false,
 }: BulkActionDialogProps) {
   const [notifyUser, setNotifyUser] = useState(false);
   const [scopeChoice, setScopeChoice] = useState<"selected" | "all-users">(
@@ -183,59 +183,53 @@ export function BulkActionDialog({
     if (resolvedAction === "revoke-selected") return selectedRows;
     return allRolesRows;
   }, [resolvedAction, assignmentRows, allRolesRows, selectedRows]);
+  const extendableRows = useMemo(
+    () => tableRows.filter((r) => r.status === "active"),
+    [tableRows],
+  );
+  const rowsForImpact = isExtend ? extendableRows : tableRows;
+  const selectedForActionCount = tableRows.length;
+  const extendableCount = extendableRows.length;
+  const skippedExtendCount = selectedForActionCount - extendableCount;
 
   const userCount = useMemo(
-    () => new Set(tableRows.map(userKey)).size,
-    [tableRows],
+    () => new Set(rowsForImpact.map(userKey)).size,
+    [rowsForImpact],
   );
   const distinctRoleCount = useMemo(
-    () => new Set(tableRows.map((r) => r.role)).size,
-    [tableRows],
+    () => new Set(rowsForImpact.map((r) => r.role)).size,
+    [rowsForImpact],
   );
-  const affectedRoleRows = useMemo(() => {
-    if (showApplicationColumn) {
-      const unique = new Map<string, { applicationId: string; role: string }>();
-      for (const r of tableRows) {
-        const appId = r.applicationId ?? "";
-        const key = `${appId}\u0000${r.role}`;
-        if (!unique.has(key)) unique.set(key, { applicationId: appId, role: r.role });
-      }
-      return [...unique.values()].sort(
-        (a, b) =>
-          (APPLICATIONS.find((x) => x.id === a.applicationId)?.name ?? a.applicationId).localeCompare(
-            APPLICATIONS.find((x) => x.id === b.applicationId)?.name ?? b.applicationId,
-          ) || a.role.localeCompare(b.role),
-      );
-    }
-    const uniqueRoles = [...new Set(tableRows.map((r) => r.role))].sort((a, b) =>
-      a.localeCompare(b),
-    );
-    return uniqueRoles.map((role) => ({ applicationId: "", role }));
-  }, [showApplicationColumn, tableRows]);
-  const impactCount = tableRows.length;
+  const affectedUsers = useMemo(
+    () =>
+      [...new Set(rowsForImpact.map((r) => `${r.firstName} ${r.lastName}`))].sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [rowsForImpact],
+  );
+  const affectedRoles = useMemo(
+    () => [...new Set(rowsForImpact.map((r) => r.role))].sort((a, b) => a.localeCompare(b)),
+    [rowsForImpact],
+  );
+  const affectedApplications = useMemo(() => {
+    const names = rowsForImpact
+      .map((r) => r.applicationId)
+      .filter((id): id is string => Boolean(id))
+      .map((id) => APPLICATIONS.find((a) => a.id === id)?.name ?? id);
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  }, [rowsForImpact]);
+  const affectedInstitutions = useMemo(() => {
+    const names = rowsForImpact
+      .map((r) => r.institutionId)
+      .filter((id): id is string => Boolean(id))
+      .map((id) => INSTITUTIONS.find((i) => i.id === id)?.name ?? id);
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  }, [rowsForImpact]);
+  const applicationsAffectedCount = affectedApplications.length;
+  const institutionsAffectedCount = affectedInstitutions.length;
+  const impactCount = rowsForImpact.length;
 
   const title = isExtend ? "Extend roles" : "Revoke roles";
-
-  const intro = useMemo(() => {
-    if (!resolvedAction) return "";
-    const n = selectedRows.length;
-    const u = new Set(selectedRows.map(userKey)).size;
-    const d = new Set(selectedRows.map((r) => r.role)).size;
-    const m = allRolesRows.length;
-
-    switch (resolvedAction) {
-      case "extend-selected":
-        return `Review all ${n} assignments that will be extended across ${u} users and ${d} distinct roles.`;
-      case "extend-all-users":
-        return `Review all ${m} role assignments for ${u} selected users.`;
-      case "revoke-selected":
-        return `You are about to revoke ${n} selected role assignments across ${u} users.`;
-      case "revoke-all-users":
-        return `You are about to revoke ${m} role assignments across ${u} users (every role for those users in this program).`;
-      default:
-        return "";
-    }
-  }, [resolvedAction, selectedRows, allRolesRows.length]);
 
   const primaryLabel = isExtend
     ? "Extend roles"
@@ -278,28 +272,6 @@ export function BulkActionDialog({
               isImpactFlow ? styles.cardKickerImpact : ""
             }`}
           >
-            {isRevoke ? "Assignments" : "Impact"}
-          </p>
-          <p className={dialogStyles.cardNumber}>{impactCount}</p>
-          <p className={dialogStyles.cardSub}>
-            {isRevoke
-              ? "Roles affected in this summary"
-              : "Role assignments affected"}
-          </p>
-        </div>
-      </article>
-      <article
-        className={`${dialogStyles.summaryCard} ${
-          isImpactFlow ? styles.summaryCardImpact : ""
-        }`}
-      >
-        <div className={dialogStyles.cardAccent} />
-        <div className={dialogStyles.cardBody}>
-          <p
-            className={`${dialogStyles.cardKicker} ${
-              isImpactFlow ? styles.cardKickerImpact : ""
-            }`}
-          >
             Users affected
           </p>
           <p className={dialogStyles.cardNumber}>{userCount}</p>
@@ -318,10 +290,46 @@ export function BulkActionDialog({
               isImpactFlow ? styles.cardKickerImpact : ""
             }`}
           >
-            Scope
+            Roles affected
           </p>
           <p className={dialogStyles.cardNumber}>{distinctRoleCount}</p>
           <p className={dialogStyles.cardSub}>Distinct roles</p>
+        </div>
+      </article>
+      <article
+        className={`${dialogStyles.summaryCard} ${
+          isImpactFlow ? styles.summaryCardImpact : ""
+        }`}
+      >
+        <div className={dialogStyles.cardAccent} />
+        <div className={dialogStyles.cardBody}>
+          <p
+            className={`${dialogStyles.cardKicker} ${
+              isImpactFlow ? styles.cardKickerImpact : ""
+            }`}
+          >
+            Applications affected
+          </p>
+          <p className={dialogStyles.cardNumber}>{applicationsAffectedCount}</p>
+          <p className={dialogStyles.cardSub}>Applications total</p>
+        </div>
+      </article>
+      <article
+        className={`${dialogStyles.summaryCard} ${
+          isImpactFlow ? styles.summaryCardImpact : ""
+        }`}
+      >
+        <div className={dialogStyles.cardAccent} />
+        <div className={dialogStyles.cardBody}>
+          <p
+            className={`${dialogStyles.cardKicker} ${
+              isImpactFlow ? styles.cardKickerImpact : ""
+            }`}
+          >
+            Institutions affected
+          </p>
+          <p className={dialogStyles.cardNumber}>{institutionsAffectedCount}</p>
+          <p className={dialogStyles.cardSub}>Institutions total</p>
         </div>
       </article>
     </div>
@@ -403,12 +411,20 @@ export function BulkActionDialog({
                     All roles for selected users ({allRolesRows.length})
                   </button>
                 </div>
-                <p className={styles.impactScopeDetail}>{intro}</p>
               </div>
               {isRevoke && (
                 <p className={styles.revokeNote}>
                   This action cannot be undone. Users may lose access immediately
                   based on your organization&apos;s policies.
+                </p>
+              )}
+              {isExtend && skippedExtendCount > 0 && (
+                <p className={styles.extendEligibilityAlert} role="status" aria-live="polite">
+                  <span className={styles.extendEligibilityIcon} aria-hidden>
+                    i
+                  </span>
+                  Only Active roles can be extended. From {selectedForActionCount} selected,{" "}
+                  {extendableCount} will be extended
                 </p>
               )}
               <section className={styles.expansionPanel}>
@@ -418,7 +434,7 @@ export function BulkActionDialog({
                   aria-expanded={affectedRolesOpen}
                   onClick={() => setAffectedRolesOpen((v) => !v)}
                 >
-                  <span>View affected roles</span>
+                  <span>Here's what's being modified</span>
                   <IconChevron
                     className={styles.expansionChevron}
                     direction={affectedRolesOpen ? "up" : "down"}
@@ -432,27 +448,36 @@ export function BulkActionDialog({
                 >
                   <div className={styles.expansionContentInner}>
                     <div className={styles.expansionBody}>
-                      <table className={styles.rolesTable}>
-                        <thead>
-                          <tr>
-                            {showApplicationColumn && <th>Application</th>}
-                            <th>Role</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {affectedRoleRows.map((row) => (
-                            <tr key={`${row.applicationId}\u0000${row.role}`}>
-                              {showApplicationColumn && (
-                                <td>
-                                  {APPLICATIONS.find((a) => a.id === row.applicationId)?.name ??
-                                    row.applicationId}
-                                </td>
-                              )}
-                              <td>{row.role}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className={styles.scopeGroups}>
+                        <div className={styles.scopeGroup}>
+                          <h3 className={styles.scopeHeading}>Users affected</h3>
+                          <p className={styles.scopeValue}>
+                            {affectedUsers.length ? affectedUsers.join(", ") : "None"}
+                          </p>
+                        </div>
+                        <div className={styles.scopeGroup}>
+                          <h3 className={styles.scopeHeading}>Roles affected</h3>
+                          <p className={styles.scopeValue}>
+                            {affectedRoles.length ? affectedRoles.join(", ") : "None"}
+                          </p>
+                        </div>
+                        <div className={styles.scopeGroup}>
+                          <h3 className={styles.scopeHeading}>Applications affected</h3>
+                          <p className={styles.scopeValue}>
+                            {affectedApplications.length
+                              ? affectedApplications.join(", ")
+                              : "None"}
+                          </p>
+                        </div>
+                        <div className={styles.scopeGroup}>
+                          <h3 className={styles.scopeHeading}>Institutions affected</h3>
+                          <p className={styles.scopeValue}>
+                            {affectedInstitutions.length
+                              ? affectedInstitutions.join(", ")
+                              : "None"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -487,11 +512,19 @@ export function BulkActionDialog({
         ) : (
           <>
             <div className={styles.bodyScroll}>
-              <p className={dialogStyles.intro}>{intro}</p>
               {isRevoke && (
                 <p className={styles.revokeNote}>
                   This action cannot be undone. Users may lose access immediately
                   based on your organization&apos;s policies.
+                </p>
+              )}
+              {isExtend && skippedExtendCount > 0 && (
+                <p className={styles.extendEligibilityAlert} role="status" aria-live="polite">
+                  <span className={styles.extendEligibilityIcon} aria-hidden>
+                    i
+                  </span>
+                  Only Active roles can be extended. From {selectedForActionCount} selected,{" "}
+                  {extendableCount} will be extended
                 </p>
               )}
               {summaryCards}
@@ -502,7 +535,7 @@ export function BulkActionDialog({
                   aria-expanded={affectedRolesOpen}
                   onClick={() => setAffectedRolesOpen((v) => !v)}
                 >
-                  <span>View affected roles</span>
+                  <span>Here's what's being modified</span>
                   <IconChevron
                     className={styles.expansionChevron}
                     direction={affectedRolesOpen ? "up" : "down"}
@@ -516,27 +549,36 @@ export function BulkActionDialog({
                 >
                   <div className={styles.expansionContentInner}>
                     <div className={styles.expansionBody}>
-                      <table className={styles.rolesTable}>
-                        <thead>
-                          <tr>
-                            {showApplicationColumn && <th>Application</th>}
-                            <th>Role</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {affectedRoleRows.map((row) => (
-                            <tr key={`${row.applicationId}\u0000${row.role}`}>
-                              {showApplicationColumn && (
-                                <td>
-                                  {APPLICATIONS.find((a) => a.id === row.applicationId)?.name ??
-                                    row.applicationId}
-                                </td>
-                              )}
-                              <td>{row.role}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className={styles.scopeGroups}>
+                        <div className={styles.scopeGroup}>
+                          <h3 className={styles.scopeHeading}>Users affected</h3>
+                          <p className={styles.scopeValue}>
+                            {affectedUsers.length ? affectedUsers.join(", ") : "None"}
+                          </p>
+                        </div>
+                        <div className={styles.scopeGroup}>
+                          <h3 className={styles.scopeHeading}>Roles affected</h3>
+                          <p className={styles.scopeValue}>
+                            {affectedRoles.length ? affectedRoles.join(", ") : "None"}
+                          </p>
+                        </div>
+                        <div className={styles.scopeGroup}>
+                          <h3 className={styles.scopeHeading}>Applications affected</h3>
+                          <p className={styles.scopeValue}>
+                            {affectedApplications.length
+                              ? affectedApplications.join(", ")
+                              : "None"}
+                          </p>
+                        </div>
+                        <div className={styles.scopeGroup}>
+                          <h3 className={styles.scopeHeading}>Institutions affected</h3>
+                          <p className={styles.scopeValue}>
+                            {affectedInstitutions.length
+                              ? affectedInstitutions.join(", ")
+                              : "None"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
