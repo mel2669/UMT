@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dialogStyles from "./ExtendRolesDialog.module.css";
 import styles from "./BulkActionDialog.module.css";
-import { APPLICATIONS, INSTITUTIONS } from "../data/globalFilterCatalog";
+import { APPLICATIONS, INSTITUTIONS, programName } from "../data/globalFilterCatalog";
 
 /** Concrete actions (used after confirm / scope-first menu). */
 export type BulkActionConcreteId =
@@ -23,6 +23,7 @@ export type BulkActionUserRow = {
   firstName: string;
   lastName: string;
   role: string;
+  program?: string;
   applicationId?: string;
   institutionId?: string;
   status: "expired" | "active" | "revoked";
@@ -95,6 +96,11 @@ export type BulkActionDialogProps = {
   onRecordLimitExceeded?: (attemptedCount: number) => void;
   /** Shows Application column in affected-roles panel when true. */
   showApplicationColumn?: boolean;
+  filterContext?: {
+    appIds: string[];
+    instIds: string[];
+    progIds: string[];
+  };
 };
 
 export function BulkActionDialog({
@@ -106,6 +112,7 @@ export function BulkActionDialog({
   allRows,
   recordLimit = MAX_BULK_ACTION_RECORDS,
   onRecordLimitExceeded,
+  filterContext,
 }: BulkActionDialogProps) {
   const [notifyUser, setNotifyUser] = useState(false);
   const [scopeChoice, setScopeChoice] = useState<"selected" | "all-users">(
@@ -192,44 +199,65 @@ export function BulkActionDialog({
   const extendableCount = extendableRows.length;
   const skippedExtendCount = selectedForActionCount - extendableCount;
 
-  const userCount = useMemo(
-    () => new Set(rowsForImpact.map(userKey)).size,
-    [rowsForImpact],
-  );
-  const distinctRoleCount = useMemo(
-    () => new Set(rowsForImpact.map((r) => r.role)).size,
-    [rowsForImpact],
-  );
-  const affectedUsers = useMemo(
-    () =>
-      [...new Set(rowsForImpact.map((r) => `${r.firstName} ${r.lastName}`))].sort((a, b) =>
-        a.localeCompare(b),
-      ),
-    [rowsForImpact],
-  );
   const affectedRoles = useMemo(
     () => [...new Set(rowsForImpact.map((r) => r.role))].sort((a, b) => a.localeCompare(b)),
     [rowsForImpact],
   );
-  const affectedApplications = useMemo(() => {
+  const rowDerivedPrograms = useMemo(() => {
+    const names = rowsForImpact
+      .map((r) => r.program?.trim() ?? "")
+      .filter((name) => name.length > 0 && name !== "-");
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  }, [rowsForImpact]);
+  const rowDerivedApplications = useMemo(() => {
     const names = rowsForImpact
       .map((r) => r.applicationId)
       .filter((id): id is string => Boolean(id))
       .map((id) => APPLICATIONS.find((a) => a.id === id)?.name ?? id);
     return [...new Set(names)].sort((a, b) => a.localeCompare(b));
   }, [rowsForImpact]);
-  const affectedInstitutions = useMemo(() => {
+  const rowDerivedInstitutions = useMemo(() => {
     const names = rowsForImpact
       .map((r) => r.institutionId)
       .filter((id): id is string => Boolean(id))
       .map((id) => INSTITUTIONS.find((i) => i.id === id)?.name ?? id);
     return [...new Set(names)].sort((a, b) => a.localeCompare(b));
   }, [rowsForImpact]);
+  const filterApplications = useMemo(
+    () =>
+      (filterContext?.appIds ?? [])
+        .map((id) => APPLICATIONS.find((a) => a.id === id)?.name ?? id)
+        .sort((a, b) => a.localeCompare(b)),
+    [filterContext?.appIds],
+  );
+  const filterInstitutions = useMemo(
+    () =>
+      (filterContext?.instIds ?? [])
+        .map((id) => INSTITUTIONS.find((i) => i.id === id)?.name ?? id)
+        .sort((a, b) => a.localeCompare(b)),
+    [filterContext?.instIds],
+  );
+  const filterPrograms = useMemo(
+    () =>
+      (filterContext?.progIds ?? [])
+        .map((id) => programName(id))
+        .sort((a, b) => a.localeCompare(b)),
+    [filterContext?.progIds],
+  );
+  const affectedApplications =
+    filterApplications.length > 0 ? filterApplications : rowDerivedApplications;
+  const affectedInstitutions =
+    filterInstitutions.length > 0 ? filterInstitutions : rowDerivedInstitutions;
+  const affectedPrograms =
+    filterPrograms.length > 0 ? filterPrograms : rowDerivedPrograms;
+  const impactCount = rowsForImpact.length;
+  const usersAffectedCount = impactCount;
+  const rolesAffectedCount = affectedRoles.length;
+  const programsAffectedCount = affectedPrograms.length;
   const applicationsAffectedCount = affectedApplications.length;
   const institutionsAffectedCount = affectedInstitutions.length;
-  const impactCount = rowsForImpact.length;
 
-  const title = isExtend ? "Extend roles" : "Revoke roles";
+  const title = isExtend ? "Extend Roles" : "Revoke Roles";
 
   const primaryLabel = isExtend
     ? "Extend roles"
@@ -254,84 +282,41 @@ export function BulkActionDialog({
 
   if (!open || !action) return null;
 
+  const summaryCardsData = [
+    { label: "Users", count: usersAffectedCount },
+    { label: "Roles", count: rolesAffectedCount },
+    { label: "Programs", count: programsAffectedCount },
+    { label: "Institutions", count: institutionsAffectedCount },
+    { label: "Applications", count: applicationsAffectedCount },
+  ].filter((card) => card.count > 1);
+
   const summaryCards = (
     <div
       className={`${dialogStyles.summaryGrid} ${
         isImpactFlow ? styles.summaryGridImpact : ""
       }`}
     >
-      <article
-        className={`${dialogStyles.summaryCard} ${
-          isImpactFlow ? styles.summaryCardImpact : ""
-        }`}
-      >
-        <div className={dialogStyles.cardAccent} />
-        <div className={dialogStyles.cardBody}>
-          <p
-            className={`${dialogStyles.cardKicker} ${
-              isImpactFlow ? styles.cardKickerImpact : ""
-            }`}
-          >
-            Users affected
-          </p>
-          <p className={dialogStyles.cardNumber}>{userCount}</p>
-          <p className={dialogStyles.cardSub}>Users total</p>
-        </div>
-      </article>
-      <article
-        className={`${dialogStyles.summaryCard} ${
-          isImpactFlow ? styles.summaryCardImpact : ""
-        }`}
-      >
-        <div className={dialogStyles.cardAccent} />
-        <div className={dialogStyles.cardBody}>
-          <p
-            className={`${dialogStyles.cardKicker} ${
-              isImpactFlow ? styles.cardKickerImpact : ""
-            }`}
-          >
-            Roles affected
-          </p>
-          <p className={dialogStyles.cardNumber}>{distinctRoleCount}</p>
-          <p className={dialogStyles.cardSub}>Distinct roles</p>
-        </div>
-      </article>
-      <article
-        className={`${dialogStyles.summaryCard} ${
-          isImpactFlow ? styles.summaryCardImpact : ""
-        }`}
-      >
-        <div className={dialogStyles.cardAccent} />
-        <div className={dialogStyles.cardBody}>
-          <p
-            className={`${dialogStyles.cardKicker} ${
-              isImpactFlow ? styles.cardKickerImpact : ""
-            }`}
-          >
-            Applications affected
-          </p>
-          <p className={dialogStyles.cardNumber}>{applicationsAffectedCount}</p>
-          <p className={dialogStyles.cardSub}>Applications total</p>
-        </div>
-      </article>
-      <article
-        className={`${dialogStyles.summaryCard} ${
-          isImpactFlow ? styles.summaryCardImpact : ""
-        }`}
-      >
-        <div className={dialogStyles.cardAccent} />
-        <div className={dialogStyles.cardBody}>
-          <p
-            className={`${dialogStyles.cardKicker} ${
-              isImpactFlow ? styles.cardKickerImpact : ""
-            }`}
-          >
-            Institutions affected
-          </p>
-          <p className={dialogStyles.cardNumber}>{institutionsAffectedCount}</p>
-          <p className={dialogStyles.cardSub}>Institutions total</p>
-        </div>
-      </article>
+      {summaryCardsData.map((card) => (
+        <article
+          key={card.label}
+          className={`${dialogStyles.summaryCard} ${
+            isImpactFlow ? styles.summaryCardImpact : ""
+          }`}
+        >
+          <div className={dialogStyles.cardAccent} />
+          <div className={dialogStyles.cardBody}>
+            <p
+              className={`${dialogStyles.cardKicker} ${
+                isImpactFlow ? styles.cardKickerImpact : ""
+              }`}
+            >
+              {card.label}
+            </p>
+            <p className={dialogStyles.cardNumber}>{card.count}</p>
+            <p className={dialogStyles.cardSub}>Users total</p>
+          </div>
+        </article>
+      ))}
     </div>
   );
 
@@ -374,10 +359,7 @@ export function BulkActionDialog({
         {isImpactFlow ? (
           <>
             <div className={styles.bodyScroll}>
-              {summaryCards}
-              <div
-                className={`${dialogStyles.extendBlock} ${styles.impactExtendSection}`}
-              >
+              <div className={`${dialogStyles.extendBlock} ${styles.impactExtendSection}`}>
                 <h2 className={dialogStyles.extendHeading}>
                   {action === "extend-impact" ? "Extend" : "Revoke"}
                 </h2>
@@ -427,6 +409,8 @@ export function BulkActionDialog({
                   {extendableCount} will be extended
                 </p>
               )}
+              {extendDateBlock}
+              {summaryCards}
               <section className={styles.expansionPanel}>
                 <button
                   type="button"
@@ -434,11 +418,11 @@ export function BulkActionDialog({
                   aria-expanded={affectedRolesOpen}
                   onClick={() => setAffectedRolesOpen((v) => !v)}
                 >
-                  <span>Here's what's being modified</span>
                   <IconChevron
                     className={styles.expansionChevron}
                     direction={affectedRolesOpen ? "up" : "down"}
                   />
+                  <span>Here&apos;s what&apos;s being modified</span>
                 </button>
                 <div
                   className={`${styles.expansionContent} ${
@@ -450,39 +434,50 @@ export function BulkActionDialog({
                     <div className={styles.expansionBody}>
                       <div className={styles.scopeGroups}>
                         <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Users affected</h3>
-                          <p className={styles.scopeValue}>
-                            {affectedUsers.length ? affectedUsers.join(", ") : "None"}
-                          </p>
+                          <h3 className={styles.scopeHeading}>Roles</h3>
+                          <div className={styles.scopeList}>
+                            {(affectedRoles.length ? affectedRoles : ["None"]).map((item) => (
+                              <p key={`role-${item}`} className={styles.scopeValue}>
+                                {item}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                         <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Roles affected</h3>
-                          <p className={styles.scopeValue}>
-                            {affectedRoles.length ? affectedRoles.join(", ") : "None"}
-                          </p>
+                          <h3 className={styles.scopeHeading}>Programs</h3>
+                          <div className={styles.scopeList}>
+                            {(affectedPrograms.length ? affectedPrograms : ["None"]).map((item) => (
+                              <p key={`program-${item}`} className={styles.scopeValue}>
+                                {item}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                         <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Applications affected</h3>
-                          <p className={styles.scopeValue}>
-                            {affectedApplications.length
-                              ? affectedApplications.join(", ")
-                              : "None"}
-                          </p>
+                          <h3 className={styles.scopeHeading}>Institutions</h3>
+                          <div className={styles.scopeList}>
+                            {(affectedInstitutions.length ? affectedInstitutions : ["None"]).map((item) => (
+                              <p key={`institution-${item}`} className={styles.scopeValue}>
+                                {item}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                         <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Institutions affected</h3>
-                          <p className={styles.scopeValue}>
-                            {affectedInstitutions.length
-                              ? affectedInstitutions.join(", ")
-                              : "None"}
-                          </p>
+                          <h3 className={styles.scopeHeading}>Applications</h3>
+                          <div className={styles.scopeList}>
+                            {(affectedApplications.length ? affectedApplications : ["None"]).map((item) => (
+                              <p key={`application-${item}`} className={styles.scopeValue}>
+                                {item}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </section>
-              {extendDateBlock}
               <label className={styles.notifyInline}>
                 <input
                   type="checkbox"
@@ -502,7 +497,9 @@ export function BulkActionDialog({
               </button>
               <button
                 type="button"
-                className={dialogStyles.btnPrimary}
+                className={
+                  isRevoke ? styles.btnRevokePrimary : dialogStyles.btnPrimary
+                }
                 onClick={handlePrimary}
               >
                 {primaryLabel}
@@ -527,6 +524,7 @@ export function BulkActionDialog({
                   {extendableCount} will be extended
                 </p>
               )}
+              {extendDateBlock}
               {summaryCards}
               <section className={styles.expansionPanel}>
                 <button
@@ -535,11 +533,11 @@ export function BulkActionDialog({
                   aria-expanded={affectedRolesOpen}
                   onClick={() => setAffectedRolesOpen((v) => !v)}
                 >
-                  <span>Here's what's being modified</span>
                   <IconChevron
                     className={styles.expansionChevron}
                     direction={affectedRolesOpen ? "up" : "down"}
                   />
+                  <span>Here&apos;s what&apos;s being modified</span>
                 </button>
                 <div
                   className={`${styles.expansionContent} ${
@@ -551,39 +549,50 @@ export function BulkActionDialog({
                     <div className={styles.expansionBody}>
                       <div className={styles.scopeGroups}>
                         <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Users affected</h3>
-                          <p className={styles.scopeValue}>
-                            {affectedUsers.length ? affectedUsers.join(", ") : "None"}
-                          </p>
+                          <h3 className={styles.scopeHeading}>Roles</h3>
+                          <div className={styles.scopeList}>
+                            {(affectedRoles.length ? affectedRoles : ["None"]).map((item) => (
+                              <p key={`role-${item}`} className={styles.scopeValue}>
+                                {item}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                         <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Roles affected</h3>
-                          <p className={styles.scopeValue}>
-                            {affectedRoles.length ? affectedRoles.join(", ") : "None"}
-                          </p>
+                          <h3 className={styles.scopeHeading}>Programs</h3>
+                          <div className={styles.scopeList}>
+                            {(affectedPrograms.length ? affectedPrograms : ["None"]).map((item) => (
+                              <p key={`program-${item}`} className={styles.scopeValue}>
+                                {item}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                         <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Applications affected</h3>
-                          <p className={styles.scopeValue}>
-                            {affectedApplications.length
-                              ? affectedApplications.join(", ")
-                              : "None"}
-                          </p>
+                          <h3 className={styles.scopeHeading}>Institutions</h3>
+                          <div className={styles.scopeList}>
+                            {(affectedInstitutions.length ? affectedInstitutions : ["None"]).map((item) => (
+                              <p key={`institution-${item}`} className={styles.scopeValue}>
+                                {item}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                         <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Institutions affected</h3>
-                          <p className={styles.scopeValue}>
-                            {affectedInstitutions.length
-                              ? affectedInstitutions.join(", ")
-                              : "None"}
-                          </p>
+                          <h3 className={styles.scopeHeading}>Applications</h3>
+                          <div className={styles.scopeList}>
+                            {(affectedApplications.length ? affectedApplications : ["None"]).map((item) => (
+                              <p key={`application-${item}`} className={styles.scopeValue}>
+                                {item}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </section>
-              {extendDateBlock}
             </div>
             <footer className={dialogStyles.footer}>
               <label className={dialogStyles.notify}>
@@ -603,7 +612,9 @@ export function BulkActionDialog({
               </button>
               <button
                 type="button"
-                className={dialogStyles.btnPrimary}
+                className={
+                  isRevoke ? styles.btnRevokePrimary : dialogStyles.btnPrimary
+                }
                 onClick={handlePrimary}
               >
                 {primaryLabel}

@@ -25,13 +25,16 @@
 
 .bodyScroll {
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
   box-sizing: border-box;
   scrollbar-width: thin;
-  padding-inline-end: 16px;
+  padding-inline-end: 0;
 }
 
 /* Reserve a real track so WebKit does not paint the thumb over text (overlay scrollbars). */
@@ -54,7 +57,7 @@
   font-family: Roboto, sans-serif;
   font-size: 14px;
   line-height: 19px;
-  margin: 0 0 16px;
+  margin: 0;
   padding: 12px 14px;
   background: var(--black-5, #f2f2f2);
   border-radius: var(--radius-sm, 4px);
@@ -63,23 +66,23 @@
 }
 
 .extendEligibilityAlert {
-  margin: 0 0 16px;
-  padding: 12px 14px;
-  border: 1px solid #006db8;
-  border-radius: 8px;
-  background: #e8f1f8;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #1961ae;
+  border-radius: 4px;
+  background: #e8eff7;
   color: #000000;
   font-family: Roboto, sans-serif;
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 19px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .extendEligibilityIcon {
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #1d65b7;
   color: #ffffff;
@@ -87,20 +90,20 @@
   align-items: center;
   justify-content: center;
   font-family: Roboto, sans-serif;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1;
   flex-shrink: 0;
 }
 
 .summaryGridImpact {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .summaryCardImpact {
-  flex: 1 1 240px;
-  min-width: 240px;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+  flex: 1 1 140px;
+  min-width: 140px;
+  box-shadow: 0 2px 1px rgba(0, 0, 0, 0.15);
 }
 
 .cardKickerImpact {
@@ -125,14 +128,14 @@
 }
 
 .impactExtendSection {
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .notifyInline {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 16px;
+  margin: 0;
   font-family: Roboto, sans-serif;
   font-size: 14px;
   line-height: 19px;
@@ -153,7 +156,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  padding-top: 8px;
+  padding-top: 16px;
   border-top: none;
 }
 
@@ -161,9 +164,8 @@
   border: 0;
   border-radius: 4px;
   background: #ffffff;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12), 0 2px 2px rgba(0, 0, 0, 0.14),
-    0 3px 1px -2px rgba(0, 0, 0, 0.2);
-  margin: 0 0 16px;
+  box-shadow: 0 2px 1px rgba(0, 0, 0, 0.15);
+  margin: 0;
   overflow: hidden;
 }
 
@@ -173,15 +175,15 @@
   background: transparent;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 8px;
   text-align: left;
-  min-height: 50px;
-  padding: 0 24px;
+  min-height: 0;
+  padding: 12px;
   font-family: Roboto, sans-serif;
-  font-size: 18px;
-  line-height: 22px;
-  font-weight: 500;
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 400;
   color: #000000;
   cursor: pointer;
 }
@@ -207,7 +209,7 @@
 
 .expansionBody {
   border-top: 1px solid #cccccc;
-  padding: 8px 12px 10px;
+  padding: 8px 12px 24px;
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity 160ms ease, transform 220ms ease;
@@ -219,13 +221,14 @@
 }
 
 .scopeGroups {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .scopeGroup {
   display: grid;
-  gap: 4px;
+  gap: 8px;
 }
 
 .scopeHeading {
@@ -235,7 +238,14 @@
   line-height: 16px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #666666;
+  color: #000000;
+  letter-spacing: 1.2px;
+}
+
+.scopeList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .scopeValue {
@@ -263,4 +273,23 @@
 
 .rolesTable td {
   padding: 6px 0;
+}
+
+/* Primary CTA for revoke flow — matches spec #C01E31 */
+.btnRevokePrimary {
+  font-family: Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 22px;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #c01e31;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.btnRevokePrimary:hover {
+  filter: brightness(1.05);
 }
