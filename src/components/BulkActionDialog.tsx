@@ -8,7 +8,9 @@ export type BulkActionConcreteId =
   | "extend-selected"
   | "extend-all-users"
   | "revoke-selected"
-  | "revoke-all-users";
+  | "revoke-all-users"
+  | "reinstate-selected"
+  | "reinstate-all-users";
 
 /** Includes impact-first entries where scope is chosen in the modal. */
 export type BulkActionId =
@@ -50,6 +52,20 @@ function IconClose() {
         d="M5.29 4.29a1 1 0 0 1 1.42 0L10 7.59l3.29-3.3a1 1 0 1 1 1.42 1.42L11.41 9l3.3 3.29a1 1 0 0 1-1.42 1.42L10 10.41l-3.29 3.3a1 1 0 0 1-1.42-1.42L8.59 9l-3.3-3.29a1 1 0 0 1 0-1.42Z"
       />
     </svg>
+  );
+}
+
+function RevokeWarningNote() {
+  return (
+    <div className={styles.revokeNote} role="status">
+      <span className={styles.revokeNoteIcon} aria-hidden>
+        !
+      </span>
+      <p className={styles.revokeNoteText}>
+        This action cannot be undone. Users may lose access immediately based
+        on your organization&apos;s policies.
+      </p>
+    </div>
   );
 }
 
@@ -144,6 +160,9 @@ export function BulkActionDialog({
   const isRevoke =
     resolvedAction === "revoke-selected" ||
     resolvedAction === "revoke-all-users";
+  const isReinstate =
+    resolvedAction === "reinstate-selected" ||
+    resolvedAction === "reinstate-all-users";
 
   useEffect(() => {
     if (!open || !action) return;
@@ -188,16 +207,29 @@ export function BulkActionDialog({
     if (resolvedAction === "extend-selected") return assignmentRows;
     if (resolvedAction === "extend-all-users") return allRolesRows;
     if (resolvedAction === "revoke-selected") return selectedRows;
+    if (resolvedAction === "revoke-all-users") return allRolesRows;
+    if (resolvedAction === "reinstate-selected") return assignmentRows;
+    if (resolvedAction === "reinstate-all-users") return allRolesRows;
     return allRolesRows;
   }, [resolvedAction, assignmentRows, allRolesRows, selectedRows]);
   const extendableRows = useMemo(
     () => tableRows.filter((r) => r.status === "active"),
     [tableRows],
   );
-  const rowsForImpact = isExtend ? extendableRows : tableRows;
+  const reinstatableRows = useMemo(
+    () => tableRows.filter((r) => r.status === "revoked"),
+    [tableRows],
+  );
+  const rowsForImpact = isExtend
+    ? extendableRows
+    : isReinstate
+      ? reinstatableRows
+      : tableRows;
   const selectedForActionCount = tableRows.length;
   const extendableCount = extendableRows.length;
   const skippedExtendCount = selectedForActionCount - extendableCount;
+  const reinstatableCount = reinstatableRows.length;
+  const skippedReinstateCount = selectedForActionCount - reinstatableCount;
 
   const affectedRoles = useMemo(
     () => [...new Set(rowsForImpact.map((r) => r.role))].sort((a, b) => a.localeCompare(b)),
@@ -257,11 +289,17 @@ export function BulkActionDialog({
   const applicationsAffectedCount = affectedApplications.length;
   const institutionsAffectedCount = affectedInstitutions.length;
 
-  const title = isExtend ? "Extend Roles" : "Revoke Roles";
+  const title = isExtend
+    ? "Extend Roles"
+    : isReinstate
+      ? "Reinstate Roles"
+      : "Revoke Roles";
 
   const primaryLabel = isExtend
     ? "Extend roles"
-    : "Revoke roles";
+    : isReinstate
+      ? "Reinstate roles"
+      : "Revoke roles";
 
   const handlePrimary = () => {
     if (impactCount > recordLimit) {
@@ -320,7 +358,7 @@ export function BulkActionDialog({
     </div>
   );
 
-  const extendDateBlock = isExtend && (
+  const extendDateBlock = (isExtend || isReinstate) && (
     <div className={dialogStyles.extendBlock}>
       <p className={dialogStyles.endDateNotice}>
         End date will be set to Aug 12, 2026
@@ -394,12 +432,7 @@ export function BulkActionDialog({
                   </button>
                 </div>
               </div>
-              {isRevoke && (
-                <p className={styles.revokeNote}>
-                  This action cannot be undone. Users may lose access immediately
-                  based on your organization&apos;s policies.
-                </p>
-              )}
+              {isRevoke && <RevokeWarningNote />}
               {isExtend && skippedExtendCount > 0 && (
                 <p className={styles.extendEligibilityAlert} role="status" aria-live="polite">
                   <span className={styles.extendEligibilityIcon} aria-hidden>
@@ -409,75 +442,86 @@ export function BulkActionDialog({
                   {extendableCount} will be extended
                 </p>
               )}
+              {isReinstate && skippedReinstateCount > 0 && (
+                <p className={styles.extendEligibilityAlert} role="status" aria-live="polite">
+                  <span className={styles.extendEligibilityIcon} aria-hidden>
+                    i
+                  </span>
+                  Only Revoked roles can be reinstated. From {selectedForActionCount}{" "}
+                  selected, {reinstatableCount} will be reinstated
+                </p>
+              )}
               {extendDateBlock}
               {summaryCards}
-              <section className={styles.expansionPanel}>
-                <button
-                  type="button"
-                  className={styles.expansionHeader}
-                  aria-expanded={affectedRolesOpen}
-                  onClick={() => setAffectedRolesOpen((v) => !v)}
-                >
-                  <IconChevron
-                    className={styles.expansionChevron}
-                    direction={affectedRolesOpen ? "up" : "down"}
-                  />
-                  <span>Here&apos;s what&apos;s being modified</span>
-                </button>
-                <div
-                  className={`${styles.expansionContent} ${
-                    affectedRolesOpen ? styles.expansionContentOpen : ""
-                  }`}
-                  aria-hidden={!affectedRolesOpen}
-                >
-                  <div className={styles.expansionContentInner}>
-                    <div className={styles.expansionBody}>
-                      <div className={styles.scopeGroups}>
-                        <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Roles</h3>
-                          <div className={styles.scopeList}>
-                            {(affectedRoles.length ? affectedRoles : ["None"]).map((item) => (
-                              <p key={`role-${item}`} className={styles.scopeValue}>
-                                {item}
-                              </p>
-                            ))}
+              <div className={styles.expansionPanelWrap}>
+                <section className={styles.expansionPanel}>
+                  <button
+                    type="button"
+                    className={styles.expansionHeader}
+                    aria-expanded={affectedRolesOpen}
+                    onClick={() => setAffectedRolesOpen((v) => !v)}
+                  >
+                    <IconChevron
+                      className={styles.expansionChevron}
+                      direction={affectedRolesOpen ? "up" : "down"}
+                    />
+                    <span>Here&apos;s what&apos;s being modified</span>
+                  </button>
+                  <div
+                    className={`${styles.expansionContent} ${
+                      affectedRolesOpen ? styles.expansionContentOpen : ""
+                    }`}
+                    aria-hidden={!affectedRolesOpen}
+                  >
+                    <div className={styles.expansionContentInner}>
+                      <div className={styles.expansionBody}>
+                        <div className={styles.scopeGroups}>
+                          <div className={styles.scopeGroup}>
+                            <h3 className={styles.scopeHeading}>Roles</h3>
+                            <div className={styles.scopeList}>
+                              {(affectedRoles.length ? affectedRoles : ["None"]).map((item) => (
+                                <p key={`role-${item}`} className={styles.scopeValue}>
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Programs</h3>
-                          <div className={styles.scopeList}>
-                            {(affectedPrograms.length ? affectedPrograms : ["None"]).map((item) => (
-                              <p key={`program-${item}`} className={styles.scopeValue}>
-                                {item}
-                              </p>
-                            ))}
+                          <div className={styles.scopeGroup}>
+                            <h3 className={styles.scopeHeading}>Programs</h3>
+                            <div className={styles.scopeList}>
+                              {(affectedPrograms.length ? affectedPrograms : ["None"]).map((item) => (
+                                <p key={`program-${item}`} className={styles.scopeValue}>
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Institutions</h3>
-                          <div className={styles.scopeList}>
-                            {(affectedInstitutions.length ? affectedInstitutions : ["None"]).map((item) => (
-                              <p key={`institution-${item}`} className={styles.scopeValue}>
-                                {item}
-                              </p>
-                            ))}
+                          <div className={styles.scopeGroup}>
+                            <h3 className={styles.scopeHeading}>Institutions</h3>
+                            <div className={styles.scopeList}>
+                              {(affectedInstitutions.length ? affectedInstitutions : ["None"]).map((item) => (
+                                <p key={`institution-${item}`} className={styles.scopeValue}>
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Applications</h3>
-                          <div className={styles.scopeList}>
-                            {(affectedApplications.length ? affectedApplications : ["None"]).map((item) => (
-                              <p key={`application-${item}`} className={styles.scopeValue}>
-                                {item}
-                              </p>
-                            ))}
+                          <div className={styles.scopeGroup}>
+                            <h3 className={styles.scopeHeading}>Applications</h3>
+                            <div className={styles.scopeList}>
+                              {(affectedApplications.length ? affectedApplications : ["None"]).map((item) => (
+                                <p key={`application-${item}`} className={styles.scopeValue}>
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </section>
+                </section>
+              </div>
               <label className={styles.notifyInline}>
                 <input
                   type="checkbox"
@@ -509,12 +553,7 @@ export function BulkActionDialog({
         ) : (
           <>
             <div className={styles.bodyScroll}>
-              {isRevoke && (
-                <p className={styles.revokeNote}>
-                  This action cannot be undone. Users may lose access immediately
-                  based on your organization&apos;s policies.
-                </p>
-              )}
+              {isRevoke && <RevokeWarningNote />}
               {isExtend && skippedExtendCount > 0 && (
                 <p className={styles.extendEligibilityAlert} role="status" aria-live="polite">
                   <span className={styles.extendEligibilityIcon} aria-hidden>
@@ -524,75 +563,86 @@ export function BulkActionDialog({
                   {extendableCount} will be extended
                 </p>
               )}
+              {isReinstate && skippedReinstateCount > 0 && (
+                <p className={styles.extendEligibilityAlert} role="status" aria-live="polite">
+                  <span className={styles.extendEligibilityIcon} aria-hidden>
+                    i
+                  </span>
+                  Only Revoked roles can be reinstated. From {selectedForActionCount}{" "}
+                  selected, {reinstatableCount} will be reinstated
+                </p>
+              )}
               {extendDateBlock}
               {summaryCards}
-              <section className={styles.expansionPanel}>
-                <button
-                  type="button"
-                  className={styles.expansionHeader}
-                  aria-expanded={affectedRolesOpen}
-                  onClick={() => setAffectedRolesOpen((v) => !v)}
-                >
-                  <IconChevron
-                    className={styles.expansionChevron}
-                    direction={affectedRolesOpen ? "up" : "down"}
-                  />
-                  <span>Here&apos;s what&apos;s being modified</span>
-                </button>
-                <div
-                  className={`${styles.expansionContent} ${
-                    affectedRolesOpen ? styles.expansionContentOpen : ""
-                  }`}
-                  aria-hidden={!affectedRolesOpen}
-                >
-                  <div className={styles.expansionContentInner}>
-                    <div className={styles.expansionBody}>
-                      <div className={styles.scopeGroups}>
-                        <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Roles</h3>
-                          <div className={styles.scopeList}>
-                            {(affectedRoles.length ? affectedRoles : ["None"]).map((item) => (
-                              <p key={`role-${item}`} className={styles.scopeValue}>
-                                {item}
-                              </p>
-                            ))}
+              <div className={styles.expansionPanelWrap}>
+                <section className={styles.expansionPanel}>
+                  <button
+                    type="button"
+                    className={styles.expansionHeader}
+                    aria-expanded={affectedRolesOpen}
+                    onClick={() => setAffectedRolesOpen((v) => !v)}
+                  >
+                    <IconChevron
+                      className={styles.expansionChevron}
+                      direction={affectedRolesOpen ? "up" : "down"}
+                    />
+                    <span>Here&apos;s what&apos;s being modified</span>
+                  </button>
+                  <div
+                    className={`${styles.expansionContent} ${
+                      affectedRolesOpen ? styles.expansionContentOpen : ""
+                    }`}
+                    aria-hidden={!affectedRolesOpen}
+                  >
+                    <div className={styles.expansionContentInner}>
+                      <div className={styles.expansionBody}>
+                        <div className={styles.scopeGroups}>
+                          <div className={styles.scopeGroup}>
+                            <h3 className={styles.scopeHeading}>Roles</h3>
+                            <div className={styles.scopeList}>
+                              {(affectedRoles.length ? affectedRoles : ["None"]).map((item) => (
+                                <p key={`role-${item}`} className={styles.scopeValue}>
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Programs</h3>
-                          <div className={styles.scopeList}>
-                            {(affectedPrograms.length ? affectedPrograms : ["None"]).map((item) => (
-                              <p key={`program-${item}`} className={styles.scopeValue}>
-                                {item}
-                              </p>
-                            ))}
+                          <div className={styles.scopeGroup}>
+                            <h3 className={styles.scopeHeading}>Programs</h3>
+                            <div className={styles.scopeList}>
+                              {(affectedPrograms.length ? affectedPrograms : ["None"]).map((item) => (
+                                <p key={`program-${item}`} className={styles.scopeValue}>
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Institutions</h3>
-                          <div className={styles.scopeList}>
-                            {(affectedInstitutions.length ? affectedInstitutions : ["None"]).map((item) => (
-                              <p key={`institution-${item}`} className={styles.scopeValue}>
-                                {item}
-                              </p>
-                            ))}
+                          <div className={styles.scopeGroup}>
+                            <h3 className={styles.scopeHeading}>Institutions</h3>
+                            <div className={styles.scopeList}>
+                              {(affectedInstitutions.length ? affectedInstitutions : ["None"]).map((item) => (
+                                <p key={`institution-${item}`} className={styles.scopeValue}>
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className={styles.scopeGroup}>
-                          <h3 className={styles.scopeHeading}>Applications</h3>
-                          <div className={styles.scopeList}>
-                            {(affectedApplications.length ? affectedApplications : ["None"]).map((item) => (
-                              <p key={`application-${item}`} className={styles.scopeValue}>
-                                {item}
-                              </p>
-                            ))}
+                          <div className={styles.scopeGroup}>
+                            <h3 className={styles.scopeHeading}>Applications</h3>
+                            <div className={styles.scopeList}>
+                              {(affectedApplications.length ? affectedApplications : ["None"]).map((item) => (
+                                <p key={`application-${item}`} className={styles.scopeValue}>
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </section>
+                </section>
+              </div>
             </div>
             <footer className={dialogStyles.footer}>
               <label className={dialogStyles.notify}>

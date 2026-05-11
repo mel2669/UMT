@@ -29,12 +29,14 @@
   flex-direction: column;
   gap: 20px;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  /* `overflow-x: hidden` clips full‑width cards’ horizontal shadow blur — leave x as `auto` (paired with y). */
   scrollbar-gutter: stable;
   box-sizing: border-box;
   scrollbar-width: thin;
-  padding-inline-end: 0;
+  /* Room so the last block’s drop‑shadow isn’t clipped by the scrollport’s bottom edge. */
+  padding-bottom: 16px;
 }
 
 /* Reserve a real track so WebKit does not paint the thumb over text (overlay scrollbars). */
@@ -53,16 +55,43 @@
   background: transparent;
 }
 
+/* Warning Alert — Figma UMT node 3479:209 (Semantic/Warning) */
 .revokeNote {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px;
+  background: #feefe9;
+  border: 1px solid #863b14;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.revokeNoteIcon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #863b14;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.revokeNoteText {
+  margin: 0;
   font-family: Roboto, sans-serif;
   font-size: 14px;
+  font-weight: 400;
   line-height: 19px;
-  margin: 0;
-  padding: 12px 14px;
-  background: var(--black-5, #f2f2f2);
-  border-radius: var(--radius-sm, 4px);
-  border-left: 4px solid var(--alert, #f5780a);
-  color: var(--black, #000);
+  letter-spacing: 0;
+  color: #000000;
 }
 
 .extendEligibilityAlert {
@@ -160,11 +189,22 @@
   border-top: none;
 }
 
+/* Shadow on wrapper only — inner .expansionPanel keeps overflow:hidden for the accordion. */
+.expansionPanelWrap {
+  width: 100%;
+  margin: 0;
+  border-radius: 4px;
+  /* Same family as stat cards, plus a softer second lift so it reads on white (1px blur alone disappears). */
+  box-shadow:
+    0 2px 1px rgba(0, 0, 0, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Same chrome as summary stat cards; clipping stays on this layer only */
 .expansionPanel {
   border: 0;
   border-radius: 4px;
   background: #ffffff;
-  box-shadow: 0 2px 1px rgba(0, 0, 0, 0.15);
   margin: 0;
   overflow: hidden;
 }

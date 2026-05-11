@@ -368,6 +368,9 @@ const BULK_ACTION_TOAST: Record<BulkActionConcreteId, string> = {
   "revoke-selected": "Selected role assignments were revoked.",
   "revoke-all-users":
     "All role assignments were revoked for the selected users.",
+  "reinstate-selected": "Selected revoked role assignments were reinstated.",
+  "reinstate-all-users":
+    "All revoked role assignments for the selected users were reinstated.",
 };
 
 function IconSort() {
@@ -455,6 +458,7 @@ function IconDropdownChevron({ className }: { className?: string }) {
 const BULK_MENU_OPTIONS_SCOPE_FIRST = [
   { id: "extend-selected", label: "Extend", nodeId: "3199:5559" },
   { id: "revoke-selected", label: "Revoke", nodeId: "3199:5575" },
+  { id: "reinstate-selected", label: "Reinstate", nodeId: "3199:5576" },
 ] as const;
 
 const ROW_ACTION_OPTIONS_ACTIVE = ["Grant", "Revoke", "Extend"] as const;
@@ -581,12 +585,6 @@ export function RowActionExtendPage() {
     hideApplyRow,
   } = getScenarioFlags(filterScenario);
 
-  const selectedRows = useMemo(
-    () => rows.filter((r) => selected.has(r.id)),
-    [rows, selected],
-  );
-  const selectedCount = selectedRows.length;
-
   useEffect(() => {
     if (!bulkMenuOpen && !rowActionMenuOpenId) return;
     const close = () => setBulkMenuOpen(false);
@@ -631,6 +629,7 @@ export function RowActionExtendPage() {
     () => rowsAfterGlobal.filter((r) => selected.has(r.id)),
     [rowsAfterGlobal, selected],
   );
+  const selectedCount = selectedRowsAfterGlobal.length;
 
   const applicationFilterOptions = useMemo(() => {
     const seen = new Set(
@@ -848,12 +847,13 @@ export function RowActionExtendPage() {
     }
 
     const allApplicableRoleCount = getAllRolesForSelectedUsers(
-      selectedRows,
-      rows,
+      selectedRowsAfterGlobal,
+      rowsAfterGlobal,
     ).length;
     const checksApplicableRoleLimit =
       optionId === "extend-all-users" ||
-      optionId === "revoke-all-users";
+      optionId === "revoke-all-users" ||
+      optionId === "reinstate-all-users";
     if (
       checksApplicableRoleLimit &&
       allApplicableRoleCount > MAX_BULK_ACTION_RECORDS
@@ -866,25 +866,35 @@ export function RowActionExtendPage() {
   };
 
   const handleBulkConfirm = (action: BulkActionConcreteId) => {
-    const selectedIds = new Set(selectedRows.map((r) => r.id));
+    const selectedIds = new Set(selectedRowsAfterGlobal.map((r) => r.id));
     const selectedUserKeys = new Set(
-      selectedRows.map((r) => `${r.firstName}\u0000${r.lastName}`),
+      selectedRowsAfterGlobal.map((r) => `${r.firstName}\u0000${r.lastName}`),
     );
 
     setRows((prev) =>
       prev.map((r) => {
         const userKey = `${r.firstName}\u0000${r.lastName}`;
-        if (action === "extend-selected" || action === "revoke-selected") {
+        if (action === "extend-selected" || action === "revoke-selected" || action === "reinstate-selected") {
           if (!selectedIds.has(r.id)) return r;
         } else if (
           action === "extend-all-users" ||
-          action === "revoke-all-users"
+          action === "revoke-all-users" ||
+          action === "reinstate-all-users"
         ) {
           if (!selectedUserKeys.has(userKey)) return r;
         }
 
         if (action === "extend-selected" || action === "extend-all-users") {
           if (r.status !== "active") return r;
+          return {
+            ...r,
+            status: "active",
+            expirationDisplay: BULK_EXTEND_EXPIRATION,
+            tabMatch: tabMatchForStatus("active"),
+          };
+        }
+        if (action === "reinstate-selected" || action === "reinstate-all-users") {
+          if (r.status !== "revoked") return r;
           return {
             ...r,
             status: "active",
@@ -1683,6 +1693,7 @@ export function RowActionExtendPage() {
         showApplicationColumn={
           activeGlobalFilters.appIds.length > 1 || draftGlobalFilters.appIds.length > 1
         }
+        filterContext={activeGlobalFilters}
         recordLimit={MAX_BULK_ACTION_RECORDS}
         onRecordLimitExceeded={(attemptedCount) => {
           setBulkModalAction(null);
