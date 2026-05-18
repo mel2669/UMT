@@ -20,6 +20,7 @@ import {
   defaultScenarioState,
   getScenarioFlags,
 } from "../data/filterScenarios";
+import { buildDemoMultiRoleRows } from "../data/demoMultiRoleTableRows";
 import {
   APPLICATIONS,
   DEMO_PROGRAM_TITLE,
@@ -60,93 +61,12 @@ export type SamUserRow = {
 const JHU_IM_PROGRAM = programName("prog-jhu-im");
 const MAYO_DERM_PROGRAM = programName("prog-mayo-derm");
 
-const BASE_ROWS: SamUserRow[] = [
+const DEMO_MULTI_ROLE_ROWS: SamUserRow[] = buildDemoMultiRoleRows();
+
+/** Single-role base users after multi-role demo block (ids follow demo rows). */
+const BASE_ROWS_SINGLE: SamUserRow[] = [
   {
-    id: "1",
-    firstName: "Morgan",
-    lastName: "Lee",
-    email: "morgan.lee@jh.edu",
-    role: "Program Coordinator",
-    status: "expired",
-    program: JHU_IM_PROGRAM,
-    applicationId: "eras",
-    institutionId: "inst-jhu",
-    programId: "prog-jhu-im",
-    expirationDisplay: "Aug 22, 2025",
-    tabMatch: ["all", "expiredRecent"],
-  },
-  {
-    id: "2",
-    firstName: "Morgan",
-    lastName: "Lee",
-    email: "morgan.lee@jh.edu",
-    role: "Program Super User",
-    status: "active",
-    program: JHU_IM_PROGRAM,
-    applicationId: "eras",
-    institutionId: "inst-jhu",
-    programId: "prog-jhu-im",
-    expirationDisplay: "Aug 15, 2026",
-    tabMatch: ["all", "expiring"],
-  },
-  {
-    id: "3",
-    firstName: "Jordan",
-    lastName: "Park",
-    email: "jordan.park@jh.edu",
-    role: "Reviewer/interviewer",
-    status: "active",
-    program: JHU_IM_PROGRAM,
-    applicationId: "eras",
-    institutionId: "inst-jhu",
-    programId: "prog-jhu-im",
-    expirationDisplay: "Aug 17, 2026",
-    tabMatch: ["all", "expiring"],
-  },
-  {
-    id: "4",
-    firstName: "Jordan",
-    lastName: "Park",
-    email: "jordan.park@jh.edu",
-    role: "Institution Super User",
-    status: "expired",
-    program: JHU_IM_PROGRAM,
-    applicationId: "eras",
-    institutionId: "inst-jhu",
-    programId: "prog-jhu-im",
-    expirationDisplay: "Aug 17, 2025",
-    tabMatch: ["all", "expiredRecent"],
-  },
-  {
-    id: "5",
-    firstName: "Emily",
-    lastName: "Hoganmoody",
-    email: "emily.hoganmoody@jh.edu",
-    role: "Institution Super User",
-    status: "active",
-    program: "-",
-    applicationId: "eras",
-    institutionId: "inst-jhu",
-    programId: "",
-    expirationDisplay: "Aug 19, 2026",
-    tabMatch: ["all", "expiring"],
-  },
-  {
-    id: "6",
-    firstName: "Daniel",
-    lastName: "Connor",
-    email: "daniel.connor@jh.edu",
-    role: "Alternate Program Super User",
-    status: "active",
-    program: DEMO_PROGRAM_TITLE,
-    applicationId: "eras",
-    institutionId: "inst-buffalo",
-    programId: "prog-ub-allergy",
-    expirationDisplay: "Sep 10, 2026",
-    tabMatch: ["all", "expiring"],
-  },
-  {
-    id: "7",
+    id: "30",
     firstName: "Elizabeth",
     lastName: "Wilson",
     email: "elizabeth.wilson@jh.edu",
@@ -160,7 +80,7 @@ const BASE_ROWS: SamUserRow[] = [
     tabMatch: ["all", "expiring"],
   },
   {
-    id: "8",
+    id: "31",
     firstName: "Daniel",
     lastName: "Chen",
     email: "daniel.chen@jh.edu",
@@ -174,7 +94,7 @@ const BASE_ROWS: SamUserRow[] = [
     tabMatch: ["all"],
   },
   {
-    id: "9",
+    id: "32",
     firstName: "Jessica",
     lastName: "Ross",
     email: "jessica.ross@jh.edu",
@@ -188,7 +108,7 @@ const BASE_ROWS: SamUserRow[] = [
     tabMatch: ["all", "expiredRecent"],
   },
   {
-    id: "10",
+    id: "33",
     firstName: "Elizabeth",
     lastName: "Zane",
     email: "elizabeth.zane@jh.edu",
@@ -296,9 +216,9 @@ function pruneGlobalFilters(
   return { appIds: next.appIds, instIds, progIds };
 }
 
-function buildGeneratedRows(count: number): SamUserRow[] {
+function buildGeneratedRows(count: number, idStartAfter: number): SamUserRow[] {
   return Array.from({ length: count }, (_, index) => {
-    const rowNumber = index + 11;
+    const rowNumber = idStartAfter + index + 1;
     const firstName = GENERATED_FIRST_NAMES[index % GENERATED_FIRST_NAMES.length];
     const lastName =
       GENERATED_LAST_NAMES[Math.floor(index / 2) % GENERATED_LAST_NAMES.length];
@@ -335,7 +255,12 @@ function buildGeneratedRows(count: number): SamUserRow[] {
 }
 
 function createInitialRows(): SamUserRow[] {
-  return [...BASE_ROWS, ...buildGeneratedRows(GENERATED_ROWS_COUNT)];
+  const baseCount = DEMO_MULTI_ROLE_ROWS.length + BASE_ROWS_SINGLE.length;
+  return [
+    ...DEMO_MULTI_ROLE_ROWS,
+    ...BASE_ROWS_SINGLE,
+    ...buildGeneratedRows(GENERATED_ROWS_COUNT, baseCount),
+  ];
 }
 
 function samePerson(
@@ -980,13 +905,41 @@ export function RowActionExtendPage() {
   const handleExtendRoleConfirm = (payload: {
     endDateDisplay: string;
     notifyUser: boolean;
+    scope: "single" | "all-user-roles";
   }) => {
     const anchor = extendRoleAnchorRow;
     if (!anchor) return;
 
+    const notifySuffix = payload.notifyUser ? " User notified." : "";
+    const userKey = `${anchor.firstName}\u0000${anchor.lastName}`;
+
+    if (payload.scope === "single") {
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id !== anchor.id) return r;
+          return {
+            ...r,
+            status: "active",
+            expirationDisplay: payload.endDateDisplay,
+            tabMatch: tabMatchForStatus("active"),
+          };
+        }),
+      );
+      setToastMessage(
+        `Extended ${anchor.role} for ${anchor.firstName} ${anchor.lastName} to ${payload.endDateDisplay}.${notifySuffix}`,
+      );
+      return;
+    }
+
+    const extendedCount = rows.filter(
+      (r) =>
+        `${r.firstName}\u0000${r.lastName}` === userKey && r.status === "active",
+    ).length;
+
     setRows((prev) =>
       prev.map((r) => {
-        if (r.id !== anchor.id) return r;
+        const matchesUser = `${r.firstName}\u0000${r.lastName}` === userKey;
+        if (!matchesUser || r.status !== "active") return r;
         return {
           ...r,
           status: "active",
@@ -996,15 +949,17 @@ export function RowActionExtendPage() {
       }),
     );
 
-    const notifySuffix = payload.notifyUser ? " User notified." : "";
     setToastMessage(
-      `Extended ${anchor.role} for ${anchor.firstName} ${anchor.lastName} to ${payload.endDateDisplay}.${notifySuffix}`,
+      extendedCount === 1
+        ? `Extended 1 role for ${anchor.firstName} ${anchor.lastName} to ${payload.endDateDisplay}.${notifySuffix}`
+        : `Extended ${extendedCount} roles for ${anchor.firstName} ${anchor.lastName} to ${payload.endDateDisplay}.${notifySuffix}`,
     );
   };
 
   const handleReinstateRoleConfirm = (payload: {
     endDateDisplay: string;
     notifyUser: boolean;
+    scope?: "single" | "all-user-roles";
   }) => {
     const anchor = reinstateRoleAnchorRow;
     if (!anchor) return;
@@ -1027,23 +982,53 @@ export function RowActionExtendPage() {
     );
   };
 
-  const handleRevokeRoleConfirm = () => {
+  const handleRevokeRoleConfirm = (payload: {
+    scope: "single" | "all-user-roles";
+  }) => {
     const anchor = revokeRoleAnchorRow;
     if (!anchor) return;
 
+    const userKey = `${anchor.firstName}\u0000${anchor.lastName}`;
+
+    if (payload.scope === "single") {
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id !== anchor.id
+            ? r
+            : {
+                ...r,
+                status: "revoked",
+                tabMatch: tabMatchForStatus("revoked"),
+              },
+        ),
+      );
+      setToastMessage(
+        `Revoked ${anchor.role} for ${anchor.firstName} ${anchor.lastName}.`,
+      );
+      return;
+    }
+
+    const revokableCount = rows.filter(
+      (r) =>
+        `${r.firstName}\u0000${r.lastName}` === userKey && r.status !== "revoked",
+    ).length;
+
     setRows((prev) =>
-      prev.map((r) =>
-        r.id !== anchor.id
-          ? r
-          : {
-              ...r,
-              status: "revoked",
-              tabMatch: tabMatchForStatus("revoked"),
-            },
-      ),
+      prev.map((r) => {
+        if (`${r.firstName}\u0000${r.lastName}` !== userKey) return r;
+        if (r.status === "revoked") return r;
+        return {
+          ...r,
+          status: "revoked",
+          tabMatch: tabMatchForStatus("revoked"),
+        };
+      }),
     );
+
     setToastMessage(
-      `Revoked ${anchor.role} for ${anchor.firstName} ${anchor.lastName}.`,
+      revokableCount === 1
+        ? `Revoked 1 role for ${anchor.firstName} ${anchor.lastName}.`
+        : `Revoked ${revokableCount} roles for ${anchor.firstName} ${anchor.lastName}.`,
     );
   };
 
@@ -1719,6 +1704,7 @@ export function RowActionExtendPage() {
       <RowActionExtendDialog
         open={extendRoleAnchorRow !== null}
         row={extendRoleAnchorRow}
+        allRows={rows}
         maxDateDisplay={BULK_EXTEND_EXPIRATION}
         onClose={() => setExtendRoleAnchorRow(null)}
         onConfirm={handleExtendRoleConfirm}
@@ -1736,6 +1722,7 @@ export function RowActionExtendPage() {
       <RowActionRevokeDialog
         open={revokeRoleAnchorRow !== null}
         row={revokeRoleAnchorRow}
+        allRows={rows}
         onClose={() => setRevokeRoleAnchorRow(null)}
         onConfirm={handleRevokeRoleConfirm}
       />

@@ -272,6 +272,21 @@ export function getAllCatalogRoleIds(): string[] {
   return out;
 }
 
+export function getAllCatalogRoleLabels(): string[] {
+  const out: string[] = [];
+  for (const s of REPORT_DEPARTMENTAL_ROLE_CATALOG) {
+    if (s.roles) {
+      for (const r of s.roles) out.push(r.label);
+    }
+    if (s.subgroups) {
+      for (const sg of s.subgroups) {
+        for (const r of sg.roles) out.push(r.label);
+      }
+    }
+  }
+  return out;
+}
+
 export function getRoleLabelById(id: string): string | undefined {
   for (const s of REPORT_DEPARTMENTAL_ROLE_CATALOG) {
     if (s.roles) {

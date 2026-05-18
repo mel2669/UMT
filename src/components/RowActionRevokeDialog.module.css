@@ -3,12 +3,11 @@
   border-radius: 4px;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
   width: min(633px, 100%);
-  max-height: min(92vh, 420px);
+  max-height: min(92vh, 520px);
   padding: 0 24px 24px;
   color: #000;
   display: flex;
   flex-direction: column;
-  gap: 24px;
   box-sizing: border-box;
 }
 
@@ -45,6 +44,18 @@
 .body {
   flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.btnDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnDanger:disabled:hover {
+  filter: none;
 }
 
 .intro {

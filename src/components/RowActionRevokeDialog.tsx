@@ -1,5 +1,12 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import overlayStyles from "./BulkActionDialog.module.css";
+import {
+  type BulkActionUserRow,
+  getAllRolesForSelectedUsers,
+} from "./BulkActionDialog";
+import type { RowActionExtendScope } from "./RowActionExtendDialog";
+import extendStyles from "./RowActionExtendDialog.module.css";
+import { RolesAccordionList, type RolesAccordionRole } from "./RolesAccordionList";
 import styles from "./RowActionRevokeDialog.module.css";
 
 export type RowActionRevokeRow = {
@@ -7,13 +14,19 @@ export type RowActionRevokeRow = {
   firstName: string;
   lastName: string;
   role: string;
+  status?: "expired" | "active" | "revoked";
+};
+
+export type RowActionRevokeConfirmPayload = {
+  scope: RowActionExtendScope;
 };
 
 export type RowActionRevokeDialogProps = {
   open: boolean;
   row: RowActionRevokeRow | null;
+  allRows?: BulkActionUserRow[];
   onClose: () => void;
-  onConfirm?: () => void;
+  onConfirm?: (payload: RowActionRevokeConfirmPayload) => void;
 };
 
 function IconClose() {
@@ -27,13 +40,120 @@ function IconClose() {
   );
 }
 
+function RevokeWarningNote() {
+  return (
+    <div className={overlayStyles.revokeNote} role="status">
+      <span className={overlayStyles.revokeNoteIcon} aria-hidden>
+        !
+      </span>
+      <p className={overlayStyles.revokeNoteText}>
+        This action cannot be undone. Users may lose access immediately based
+        on your organization&apos;s policies.
+      </p>
+    </div>
+  );
+}
+
+function ScopeRadio({
+  name,
+  value,
+  checked,
+  onChange,
+  label,
+}: {
+  name: string;
+  value: RowActionExtendScope;
+  checked: boolean;
+  onChange: (value: RowActionExtendScope) => void;
+  label: string;
+}) {
+  return (
+    <label className={extendStyles.radioRow}>
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={checked}
+        onChange={() => onChange(value)}
+        className={extendStyles.srOnly}
+      />
+      <span className={extendStyles.radioVisual} aria-hidden>
+        <span
+          className={`${extendStyles.radioControl} ${
+            checked ? extendStyles.radioControlSelected : ""
+          }`}
+        >
+          <span className={extendStyles.radioDot} />
+        </span>
+      </span>
+      <span className={extendStyles.rowLabel}>{label}</span>
+    </label>
+  );
+}
+
 export function RowActionRevokeDialog({
   open,
   row,
+  allRows = [],
   onClose,
   onConfirm,
 }: RowActionRevokeDialogProps) {
   const titleId = useId();
+  const scopeGroupName = useId();
+  const [scope, setScope] = useState<RowActionExtendScope>("single");
+
+  const userAssignments = useMemo(() => {
+    if (!row) return [];
+    return getAllRolesForSelectedUsers([row as BulkActionUserRow], allRows);
+  }, [row, allRows]);
+
+  const showMultiRoleOption = userAssignments.length > 1;
+
+  const revokableRows = useMemo(
+    () => userAssignments.filter((r) => r.status !== "revoked"),
+    [userAssignments],
+  );
+
+  const revokableCount = revokableRows.length;
+  const skippedRevokeCount = userAssignments.length - revokableCount;
+
+  const accordionPanels = useMemo(() => {
+    const toRole = (r: BulkActionUserRow): RolesAccordionRole => ({
+      label: r.role,
+      status: r.status,
+    });
+    const revokableRoles = revokableRows.map(toRole);
+    const skippedRoles = userAssignments
+      .filter((r) => r.status === "revoked")
+      .map(toRole);
+
+    const panels: {
+      id: string;
+      title: string;
+      roles: RolesAccordionRole[];
+    }[] = [];
+
+    if (revokableRoles.length > 0) {
+      panels.push({
+        id: "revoke-roles",
+        title: "Roles to revoke",
+        roles: revokableRoles,
+      });
+    }
+    if (skippedRoles.length > 0) {
+      panels.push({
+        id: "not-included",
+        title: "Not included",
+        roles: skippedRoles,
+      });
+    }
+    return panels;
+  }, [revokableRows, userAssignments]);
+
+  useEffect(() => {
+    if (!open) return;
+    setScope("single");
+  }, [open, row]);
 
   useEffect(() => {
     if (!open) return;
@@ -55,7 +175,26 @@ export function RowActionRevokeDialog({
 
   if (!open || !row) return null;
 
-  const userDisplay = `${row.firstName} ${row.lastName}`;
+  const isAllUserRoles = scope === "all-user-roles";
+  const userName = `${row.firstName} ${row.lastName}`;
+  const intro =
+    scope === "single" ? (
+      <>
+        Revoke <strong>{row.role}</strong> role for user <strong>{userName}</strong>.
+      </>
+    ) : revokableCount === 1 ? (
+      <>
+        Revoke <strong>1 role assignment</strong> for user <strong>{userName}</strong>.
+      </>
+    ) : (
+      <>
+        Revoke <strong>{revokableCount} role assignments</strong> for user{" "}
+        <strong>{userName}</strong>.
+      </>
+    );
+
+  const verbCta = isAllUserRoles ? "Revoke roles" : "Revoke role";
+  const primaryDisabled = isAllUserRoles && revokableCount === 0;
 
   return (
     <div className={overlayStyles.backdrop} role="presentation" onClick={onClose}>
@@ -82,11 +221,50 @@ export function RowActionRevokeDialog({
         </header>
 
         <div className={overlayStyles.bodyScroll}>
-          <div className={styles.body}>
-            <p className={styles.intro}>
-              Revoke <strong>{row.role}</strong> role for user{" "}
-              <strong>{userDisplay}</strong>.
+          <RevokeWarningNote />
+
+          {isAllUserRoles && skippedRevokeCount > 0 && (
+            <p
+              className={`${overlayStyles.extendEligibilityAlert} ${extendStyles.eligibilityAlertTop}`}
+              role="status"
+              aria-live="polite"
+            >
+              <span className={overlayStyles.extendEligibilityIcon} aria-hidden>
+                i
+              </span>
+              Already revoked roles will not be included. From {userAssignments.length}{" "}
+              assignments, {revokableCount} will be revoked.
             </p>
+          )}
+
+          <div className={styles.body}>
+            <p className={styles.intro}>{intro}</p>
+
+            {showMultiRoleOption && (
+              <fieldset className={extendStyles.radioGroup}>
+                <legend className={extendStyles.srOnly}>Roles to revoke</legend>
+                <ScopeRadio
+                  name={scopeGroupName}
+                  value="single"
+                  checked={scope === "single"}
+                  onChange={setScope}
+                  label="This role only"
+                />
+                <ScopeRadio
+                  name={scopeGroupName}
+                  value="all-user-roles"
+                  checked={scope === "all-user-roles"}
+                  onChange={setScope}
+                  label={`All roles for ${userName} (${userAssignments.length})`}
+                />
+              </fieldset>
+            )}
+
+            {isAllUserRoles &&
+              userAssignments.length > 0 &&
+              accordionPanels.length > 0 && (
+                <RolesAccordionList panels={accordionPanels} />
+              )}
           </div>
         </div>
 
@@ -97,12 +275,13 @@ export function RowActionRevokeDialog({
           <button
             type="button"
             className={styles.btnDanger}
+            disabled={primaryDisabled}
             onClick={() => {
-              onConfirm?.();
+              onConfirm?.({ scope });
               onClose();
             }}
           >
-            Revoke role
+            {verbCta}
           </button>
         </footer>
       </div>

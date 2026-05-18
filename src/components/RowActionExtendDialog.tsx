@@ -1,5 +1,10 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import overlayStyles from "./BulkActionDialog.module.css";
+import {
+  type BulkActionUserRow,
+  getAllRolesForSelectedUsers,
+} from "./BulkActionDialog";
+import { RolesAccordionList, type RolesAccordionRole } from "./RolesAccordionList";
 import styles from "./RowActionExtendDialog.module.css";
 
 export type RowActionExtendRow = {
@@ -7,15 +12,26 @@ export type RowActionExtendRow = {
   firstName: string;
   lastName: string;
   role: string;
+  status?: "expired" | "active" | "revoked";
+  expirationDisplay?: string;
+};
+
+export type RowActionExtendScope = "single" | "all-user-roles";
+
+export type RowActionExtendConfirmPayload = {
+  endDateDisplay: string;
+  notifyUser: boolean;
+  scope: RowActionExtendScope;
 };
 
 export type RowActionExtendDialogProps = {
   open: boolean;
   row: RowActionExtendRow | null;
+  allRows?: BulkActionUserRow[];
   maxDateDisplay: string;
   mode?: "extend" | "reinstate";
   onClose: () => void;
-  onConfirm?: (payload: { endDateDisplay: string; notifyUser: boolean }) => void;
+  onConfirm?: (payload: RowActionExtendConfirmPayload) => void;
 };
 
 function IconClose() {
@@ -29,20 +45,116 @@ function IconClose() {
   );
 }
 
+function ScopeRadio({
+  name,
+  value,
+  checked,
+  onChange,
+  label,
+}: {
+  name: string;
+  value: RowActionExtendScope;
+  checked: boolean;
+  onChange: (value: RowActionExtendScope) => void;
+  label: string;
+}) {
+  return (
+    <label className={styles.radioRow}>
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={checked}
+        onChange={() => onChange(value)}
+        className={styles.srOnly}
+      />
+      <span className={styles.radioVisual} aria-hidden>
+        <span
+          className={`${styles.radioControl} ${
+            checked ? styles.radioControlSelected : ""
+          }`}
+        >
+          <span className={styles.radioDot} />
+        </span>
+      </span>
+      <span className={styles.rowLabel}>{label}</span>
+    </label>
+  );
+}
+
 export function RowActionExtendDialog({
   open,
   row,
+  allRows = [],
   maxDateDisplay,
   mode = "extend",
   onClose,
   onConfirm,
 }: RowActionExtendDialogProps) {
   const titleId = useId();
+  const scopeGroupName = useId();
   const [notifyUser, setNotifyUser] = useState(false);
+  const [scope, setScope] = useState<RowActionExtendScope>("single");
+
+  const isReinstate = mode === "reinstate";
+  const showScopeChoice = !isReinstate && row !== null;
+
+  const userAssignments = useMemo(() => {
+    if (!row || !showScopeChoice) return [];
+    return getAllRolesForSelectedUsers(
+      [row as BulkActionUserRow],
+      allRows,
+    );
+  }, [row, allRows, showScopeChoice]);
+
+  const showMultiRoleOption = userAssignments.length > 1;
+
+  const extendableRows = useMemo(
+    () => userAssignments.filter((r) => r.status === "active"),
+    [userAssignments],
+  );
+
+  const extendableCount = extendableRows.length;
+  const skippedExtendCount = userAssignments.length - extendableCount;
+
+  const accordionPanels = useMemo(() => {
+    if (!showScopeChoice) return [];
+    const toRole = (r: BulkActionUserRow): RolesAccordionRole => ({
+      label: r.role,
+      status: r.status,
+    });
+    const extendableRoles = extendableRows.map(toRole);
+    const skippedRoles = userAssignments
+      .filter((r) => r.status !== "active")
+      .map(toRole);
+
+    const panels: {
+      id: string;
+      title: string;
+      roles: RolesAccordionRole[];
+    }[] = [];
+
+    if (extendableRoles.length > 0) {
+      panels.push({
+        id: "extend-roles",
+        title: "Roles to extend",
+        roles: extendableRoles,
+      });
+    }
+    if (skippedRoles.length > 0) {
+      panels.push({
+        id: "not-included",
+        title: "Not included",
+        roles: skippedRoles,
+      });
+    }
+    return panels;
+  }, [showScopeChoice, extendableRows, userAssignments]);
 
   useEffect(() => {
     if (!open) return;
     setNotifyUser(false);
+    setScope("single");
   }, [open, row]);
 
   useEffect(() => {
@@ -66,10 +178,25 @@ export function RowActionExtendDialog({
   if (!open || !row) return null;
 
   const selectedDateDisplay = maxDateDisplay;
-  const isReinstate = mode === "reinstate";
   const verbTitle = isReinstate ? "Reinstate Role" : "Extend Role";
-  const verbCta = isReinstate ? "Reinstate role" : "Extend role";
   const verbBody = isReinstate ? "Reinstate" : "Extend";
+  const isAllUserRoles = scope === "all-user-roles";
+  const verbCta = isReinstate
+    ? "Reinstate role"
+    : isAllUserRoles
+      ? "Extend roles"
+      : "Extend role";
+
+  const userName = `${row.firstName} ${row.lastName}`;
+  const intro =
+    isReinstate || scope === "single"
+      ? `${verbBody} ${row.role} role for user ${userName} to ${maxDateDisplay}`
+      : extendableCount === 1
+        ? `${verbBody} 1 role assignment for ${userName} to ${maxDateDisplay}`
+        : `${verbBody} ${extendableCount} role assignments for ${userName} to ${maxDateDisplay}`;
+
+  const primaryDisabled =
+    !isReinstate && isAllUserRoles && extendableCount === 0;
 
   return (
     <div className={overlayStyles.backdrop} role="presentation" onClick={onClose}>
@@ -95,11 +222,49 @@ export function RowActionExtendDialog({
         </header>
 
         <div className={overlayStyles.bodyScroll}>
-          <div className={styles.content}>
-            <p className={styles.intro}>
-              {verbBody} {row.role} role for user {row.firstName} {row.lastName}{" "}
-              to {maxDateDisplay}
+          {showScopeChoice && isAllUserRoles && skippedExtendCount > 0 && (
+            <p
+              className={`${overlayStyles.extendEligibilityAlert} ${styles.eligibilityAlertTop}`}
+              role="status"
+              aria-live="polite"
+            >
+              <span className={overlayStyles.extendEligibilityIcon} aria-hidden>
+                i
+              </span>
+              Only Active roles can be extended. From {userAssignments.length}{" "}
+              assignments, {extendableCount} will be extended.
             </p>
+          )}
+
+          <div className={styles.content}>
+            <p className={styles.intro}>{intro}</p>
+
+            {showScopeChoice && showMultiRoleOption && (
+              <fieldset className={styles.radioGroup}>
+                <legend className={styles.srOnly}>Roles to extend</legend>
+                <ScopeRadio
+                  name={scopeGroupName}
+                  value="single"
+                  checked={scope === "single"}
+                  onChange={setScope}
+                  label="This role only"
+                />
+                <ScopeRadio
+                  name={scopeGroupName}
+                  value="all-user-roles"
+                  checked={scope === "all-user-roles"}
+                  onChange={setScope}
+                  label={`All roles for ${userName} (${userAssignments.length})`}
+                />
+              </fieldset>
+            )}
+
+            {showScopeChoice &&
+              isAllUserRoles &&
+              userAssignments.length > 0 &&
+              accordionPanels.length > 0 && (
+                <RolesAccordionList panels={accordionPanels} />
+              )}
 
             <label className={styles.notifyRow}>
               <input
@@ -120,10 +285,12 @@ export function RowActionExtendDialog({
           <button
             type="button"
             className={styles.btnPrimary}
+            disabled={primaryDisabled}
             onClick={() => {
               onConfirm?.({
                 endDateDisplay: selectedDateDisplay,
                 notifyUser,
+                scope: isReinstate ? "single" : scope,
               });
               onClose();
             }}
