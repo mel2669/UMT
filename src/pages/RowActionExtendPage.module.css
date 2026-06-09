@@ -231,6 +231,25 @@
   color: var(--primary);
 }
 
+.secondaryDemoBtn {
+  margin-left: 8px;
+  padding: 8px 12px;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--primary);
+  background: var(--white);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.secondaryDemoBtn:hover {
+  background: rgba(0, 106, 114, 0.06);
+}
+
 /* Main content */
 .main {
   width: 100%;

@@ -351,7 +351,6 @@ export function BulkActionDialog({
               {card.label}
             </p>
             <p className={dialogStyles.cardNumber}>{card.count}</p>
-            <p className={dialogStyles.cardSub}>Users total</p>
           </div>
         </article>
       ))}

@@ -49,28 +49,6 @@ function IconClose() {
   );
 }
 
-function IconIssue() {
-  return (
-    <svg className={styles.badgeIcon} viewBox="0 0 16 16" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm.75 10.5h-1.5v-1.5h1.5v1.5Zm0-3h-1.5V4.5h1.5V8.5Z"
-      />
-    </svg>
-  );
-}
-
-function IconCheck() {
-  return (
-    <svg className={styles.badgeIcon} viewBox="0 0 16 16" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm3.2 5.23-4 4.5a1 1 0 0 1-1.45.05L4.8 9.8a1 1 0 1 1 1.4-1.42l.8.8 3.2-3.6a1 1 0 0 1 1.48 1.35Z"
-      />
-    </svg>
-  );
-}
-
 function IconChevron() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
@@ -196,42 +174,8 @@ function RoleLeafRow({
 }) {
   const a = assignmentForCatalogLabel(assignments, leaf.label);
   const isActive = a?.status === "active";
-  const isExpired = a?.status === "expired";
   const inputId = `dept-role-${leaf.id}`;
-  const checked = picked.has(leaf.id);
-
-  if (isActive) {
-    return (
-      <div
-        className={`${styles.roleRow} ${styles.roleRowSpaced} ${styles.leafIndent} ${styles.rowAssigned}`}
-      >
-        <input
-          id={inputId}
-          type="checkbox"
-          className={styles.checkbox}
-          checked
-          disabled
-          readOnly
-          aria-label={leaf.label}
-        />
-        <label
-          className={`${styles.checkboxControl} ${styles.checkboxControlChecked}`}
-          htmlFor={inputId}
-          aria-hidden
-        />
-        <div className={styles.roleLabelGroup}>
-          <div className={`${styles.roleLabel} ${styles.roleLabelMuted}`}>
-            {leaf.label}
-          </div>
-          <RoleInfoDetails roleLabel={leaf.label} />
-        </div>
-        <span className={`${styles.badge} ${styles.badgeOk}`}>
-          <IconCheck />
-          Active
-        </span>
-      </div>
-    );
-  }
+  const checked = isActive || picked.has(leaf.id);
 
   return (
     <div className={`${styles.roleRow} ${styles.roleRowSpaced} ${styles.leafIndent}`}>
@@ -240,22 +184,28 @@ function RoleLeafRow({
         type="checkbox"
         className={styles.checkbox}
         checked={checked}
-        onChange={() => onToggle(leaf.id)}
+        disabled={isActive}
+        readOnly={isActive}
+        onChange={isActive ? undefined : () => onToggle(leaf.id)}
         aria-label={leaf.label}
       />
-      <label className={styles.checkboxControl} htmlFor={inputId} aria-hidden />
+      <label
+        className={`${styles.checkboxControl} ${
+          isActive ? styles.checkboxControlChecked : ""
+        }`}
+        htmlFor={inputId}
+        aria-hidden
+      />
       <div className={styles.roleLabelGroup}>
-        <label className={styles.roleLabel} htmlFor={inputId}>
-          {leaf.label}
-        </label>
+        {isActive ? (
+          <div className={styles.roleLabel}>{leaf.label}</div>
+        ) : (
+          <label className={styles.roleLabel} htmlFor={inputId}>
+            {leaf.label}
+          </label>
+        )}
         <RoleInfoDetails roleLabel={leaf.label} />
       </div>
-      {isExpired && (
-        <span className={`${styles.badge} ${styles.badgeAlert}`}>
-          <IconIssue />
-          Expired
-        </span>
-      )}
     </div>
   );
 }
@@ -311,10 +261,41 @@ function SubgroupBlock({
   );
 }
 
+const GME_TRACK_APPLICATION_ID = "gme";
+export const MIN_GRANTABLE_ROLES_FOR_ACCORDION = 3;
+
+export const FEW_ROLES_DEMO_SECTIONS: ReportDeptMajorSection[] = [
+  {
+    id: "demo-few-roles",
+    title: "Available roles",
+    roles: [
+      { id: "few-role-1", label: "GME Program Director" },
+      { id: "few-role-2", label: "GME Coordinator" },
+    ],
+  },
+];
+
+function countGrantableRoles(
+  roleLabelById: Map<string, string>,
+  assignments: GrantRolesRow[],
+): number {
+  let count = 0;
+  for (const label of roleLabelById.values()) {
+    if (assignmentForCatalogLabel(assignments, label)?.status !== "active") {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 export type GrantRolesDialogProps = {
   open: boolean;
   anchorRow: GrantRolesRow | null;
   allRows: GrantRolesRow[];
+  /** Global application filter — GME Track uses accordion when enough roles are grantable. */
+  selectedApplicationIds?: string[];
+  /** Replaces the default catalog (e.g. few-roles demo). */
+  sectionsOverride?: ReportDeptMajorSection[];
   onClose: () => void;
   onConfirm?: (roleNames: string[]) => void;
 };
@@ -323,13 +304,21 @@ export function GrantRolesDialog({
   open,
   anchorRow,
   allRows,
+  selectedApplicationIds = [],
+  sectionsOverride,
   onClose,
   onConfirm,
 }: GrantRolesDialogProps) {
   const titleId = useId();
   const selectAllIdPrefix = useId().replace(/:/g, "");
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
-  const [viewMode, setViewMode] = useState<"standard" | "accordion">("standard");
+
+  const isGmeTrack = useMemo(
+    () =>
+      selectedApplicationIds.length === 1 &&
+      selectedApplicationIds[0] === GME_TRACK_APPLICATION_ID,
+    [selectedApplicationIds],
+  );
 
   const assignments = useMemo(() => {
     if (!anchorRow) return [];
@@ -352,8 +341,9 @@ export function GrantRolesDialog({
   }, [allRows]);
 
   const filteredSections = useMemo(
-    () => [genericRolesSection, ...REPORT_DEPARTMENTAL_ROLE_CATALOG],
-    [genericRolesSection],
+    () =>
+      sectionsOverride ?? [genericRolesSection, ...REPORT_DEPARTMENTAL_ROLE_CATALOG],
+    [sectionsOverride, genericRolesSection],
   );
 
   const roleLabelById = useMemo(() => {
@@ -371,10 +361,17 @@ export function GrantRolesDialog({
     return map;
   }, [filteredSections]);
 
+  const grantableRoleCount = useMemo(
+    () => countGrantableRoles(roleLabelById, assignments),
+    [roleLabelById, assignments],
+  );
+
+  const useAccordionView =
+    isGmeTrack && grantableRoleCount >= MIN_GRANTABLE_ROLES_FOR_ACCORDION;
+
   useEffect(() => {
     if (!open) return;
     setPicked(new Set());
-    setViewMode("standard");
   }, [open, anchorRow]);
 
   useEffect(() => {
@@ -613,26 +610,6 @@ export function GrantRolesDialog({
             <h1 className={styles.title} id={titleId}>
               Grant Roles to {displayName}
             </h1>
-            <div className={styles.viewSwitcher} role="group" aria-label="Role view mode">
-              <button
-                type="button"
-                className={`${styles.viewBtn} ${
-                  viewMode === "standard" ? styles.viewBtnActive : ""
-                }`}
-                onClick={() => setViewMode("standard")}
-              >
-                Standard
-              </button>
-              <button
-                type="button"
-                className={`${styles.viewBtn} ${
-                  viewMode === "accordion" ? styles.viewBtnActive : ""
-                }`}
-                onClick={() => setViewMode("accordion")}
-              >
-                Accordion
-              </button>
-            </div>
             <button
               type="button"
               className={styles.closeBtn}
@@ -642,12 +619,12 @@ export function GrantRolesDialog({
               <IconClose />
             </button>
           </header>
-          {viewMode === "standard" ? (
-            filteredSections.map((section) => renderMajorSection(section))
-          ) : (
+          {useAccordionView ? (
             <div className={styles.accordionPanelShell}>
               {filteredSections.map((section) => renderAccordionSection(section))}
             </div>
+          ) : (
+            filteredSections.map((section) => renderMajorSection(section))
           )}
         </div>
 

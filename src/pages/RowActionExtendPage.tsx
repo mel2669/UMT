@@ -8,7 +8,10 @@ import {
 } from "../components/BulkActionDialog";
 import { ColumnMultiSelectFilter } from "../components/ColumnMultiSelectFilter";
 import { SelectionLimitDialog } from "../components/SelectionLimitDialog";
-import { GrantRolesDialog } from "../components/GrantRolesDialog";
+import {
+  FEW_ROLES_DEMO_SECTIONS,
+  GrantRolesDialog,
+} from "../components/GrantRolesDialog";
 import { RowActionExtendDialog } from "../components/RowActionExtendDialog";
 import { RowActionRevokeDialog } from "../components/RowActionRevokeDialog";
 import { Toast } from "../components/Toast";
@@ -494,6 +497,7 @@ export function RowActionExtendPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [grantRolesAnchorRow, setGrantRolesAnchorRow] =
     useState<SamUserRow | null>(null);
+  const [grantRolesFewRolesDemo, setGrantRolesFewRolesDemo] = useState(false);
   const [extendRoleAnchorRow, setExtendRoleAnchorRow] =
     useState<SamUserRow | null>(null);
   const [reinstateRoleAnchorRow, setReinstateRoleAnchorRow] =
@@ -1106,6 +1110,19 @@ export function RowActionExtendPage() {
             <button type="button" className={styles.secondaryLink}>
               Search Users
             </button>
+            <button
+              type="button"
+              className={styles.secondaryDemoBtn}
+              onClick={() => {
+                const anchor =
+                  rows.find((r) => r.applicationId === "gme") ?? rows[0] ?? null;
+                if (!anchor) return;
+                setGrantRolesFewRolesDemo(true);
+                setGrantRolesAnchorRow(anchor);
+              }}
+            >
+              View grant roles with 3 or fewer roles
+            </button>
           </div>
         </div>
       </div>
@@ -1586,6 +1603,7 @@ export function RowActionExtendPage() {
                                 onClick={() => {
                                   setRowActionMenuOpenId(null);
                                   if (actionLabel === "Grant") {
+                                    setGrantRolesFewRolesDemo(false);
                                     setGrantRolesAnchorRow(r);
                                   }
                                   if (actionLabel === "Extend") {
@@ -1697,7 +1715,16 @@ export function RowActionExtendPage() {
         open={grantRolesAnchorRow !== null}
         anchorRow={grantRolesAnchorRow}
         allRows={rows}
-        onClose={() => setGrantRolesAnchorRow(null)}
+        selectedApplicationIds={
+          grantRolesFewRolesDemo ? ["gme"] : activeGlobalFilters.appIds
+        }
+        sectionsOverride={
+          grantRolesFewRolesDemo ? FEW_ROLES_DEMO_SECTIONS : undefined
+        }
+        onClose={() => {
+          setGrantRolesAnchorRow(null);
+          setGrantRolesFewRolesDemo(false);
+        }}
         onConfirm={handleGrantRolesConfirm}
       />
 
